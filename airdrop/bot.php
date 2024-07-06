@@ -1,7 +1,8 @@
 <?php
 
-include 'config.php';
-include 'functions.php';
+require 'config.php';
+require 'functions.php';
+
 
 $update = json_decode(file_get_contents('php://input'), true);
 # ----------------- [ <- variables -> ] ----------------- #
@@ -14,8 +15,6 @@ if (isset($update['message'])){
 }
 
 # ----------------- [ <- main -> ] ----------------- #
-if ($text == '/start'){
-    sendMessage($from_id, 'BUX FIXED!');
-    sleep(5);
-    deleteMessages($chat_id, $message_id);
+if ($update){
+    sendMessage($from_id, convertToEnglishNumbers($text));
 }
