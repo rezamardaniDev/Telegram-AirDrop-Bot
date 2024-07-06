@@ -15,11 +15,11 @@ function TelegramAPI(string $method, array $params)
     return $data;
 }
 
-function sendMessage($chat_id, $text, $parse_mode = null, $reply_markup = null){
+function sendMessage($chat_id, $text, $reply_markup = null){
     TelegramAPI('sendMessage', [
         'chat_id'      => $chat_id,
         'text'         => $text,
-        'parse_mode'   => $parse_mode,
+        'parse_mode'   => 'Markdown',
         'reply_markup' => $reply_markup
     ]);
 }
