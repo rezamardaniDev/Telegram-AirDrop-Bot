@@ -46,3 +46,17 @@ https://t.me/ReporterDevBot?start=$from_id
     sendMessage($from_id, $msg);
     die();
 }
+
+if ($text == 'برترین کاربران') {
+    $topUsers = mysqli_query($db, "SELECT * FROM `users` ORDER BY `balance` DESC LIMIT 10");
+    $msg = "👤 10 نفرات برتر ربات\n\n";
+    $rank = 1;
+    while ($res = $topUsers->fetch_assoc()) {
+        $user = $res['chat_id'];
+        $balance = $res['balance'];
+        $msg .= "$rank) $user ----> $balance TRX\n\n";
+        $rank++;
+    }
+    sendMessage($from_id, $msg);
+    die();
+}
