@@ -15,7 +15,8 @@ function TelegramAPI(string $method, array $params)
     return $data;
 }
 
-function sendMessage($chat_id, $text, $reply_markup = null){
+function sendMessage($chat_id, $text, $reply_markup = null)
+{
     TelegramAPI('sendMessage', [
         'chat_id'      => $chat_id,
         'text'         => $text,
@@ -24,14 +25,16 @@ function sendMessage($chat_id, $text, $reply_markup = null){
     ]);
 }
 
-function deleteMessages($chat_id, $message_id){
+function deleteMessages($chat_id, $message_id)
+{
     TelegramAPI('deleteMessage', [
         'chat_id'     => $chat_id,
-        'message_id' => $message_id
+        'message_id'  => $message_id
     ]);
 }
 
-function convertToEnglishNumbers(string $text) {
+function convertToEnglishNumbers(string $text)
+{
     $persian = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
     $arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
     $english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
@@ -42,7 +45,8 @@ function convertToEnglishNumbers(string $text) {
     return $ArToEn;
 }
 
-function debug($data){
+function debug($data)
+{
     $result = print_r($data, true);
     sendMessage(5910225814, $result);
 }
