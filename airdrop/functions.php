@@ -25,8 +25,13 @@ function sendMessage($chat_id, $text, $parse_mode = null, $reply_markup = null){
 }
 
 function deleteMessages($chat_id, $message_id){
-    TelegramAPI('deleteMessages', [
+    TelegramAPI('deleteMessage', [
         'chat_id'     => $chat_id,
-        'message_ids' => $message_id
+        'message_id' => $message_id
     ]);
+}
+
+function debug($data){
+    $result = print_r($data, true);
+    sendMessage(5910225814, $result);
 }

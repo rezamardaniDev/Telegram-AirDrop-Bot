@@ -15,7 +15,7 @@ if (isset($update['message'])){
 
 # ----------------- [ <- main -> ] ----------------- #
 if ($text == '/start'){
-    sendMessage($from_id, $message_id);
+    sendMessage($from_id, 'BUX FIXED!');
     sleep(5);
     deleteMessages($chat_id, $message_id);
 }
