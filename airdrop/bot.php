@@ -20,8 +20,11 @@ if (isset($update['message'])) {
 if (preg_match('/^\/start/', $text)) {
 
     $invite_id = explode(' ', $text)[1];
-    if ($invite_id) {
-        if ($invite_id != $from_id) {
+
+    if ($invite_id && $invite_id != $from_id) {
+        $checkInvite = mysqli_query($db, "SELECT * FROM `invitations` WHERE `invited` = ($from_id)");
+        if ($checkInvite->num_rows == 0) {
+            mysqli_query($db, "INSERT INTO `invitations` (`caller`, `invited`) VALUES ($invite_id, $from_id)");
             $userBalance = mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($invite_id)")->fetch_assoc()['balance'];
             $newBalance = $userBalance + 0.5;
             mysqli_query($db, "UPDATE `users` SET `balance` = $newBalance WHERE `chat_id` = ($invite_id) ");
