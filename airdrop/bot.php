@@ -17,7 +17,7 @@ if (isset($update['message'])) {
 }
 
 # ----------------- [ <- main -> ] ----------------- #
-if (preg_match('/^\/start/', $text)) {
+if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصلی') {
 
     $invite_id = explode(' ', $text)[1];
 
@@ -30,6 +30,8 @@ if (preg_match('/^\/start/', $text)) {
             mysqli_query($db, "UPDATE `users` SET `balance` = $newBalance WHERE `chat_id` = ($invite_id) ");
             sendMessage($invite_id, "تبریک یک کاربر جدید با لینک دعوت شما به ربات پیوست!\nموجودی جدید شما: $newBalance TRX");
         }
+    } else {
+        mysqli_query($db, "INSERT INTO `invitations` (`caller`, `invited`) VALUES (0, $from_id)");
     }
 
     $checkUser = mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($from_id)");
@@ -61,5 +63,13 @@ if ($text == 'برترین کاربران') {
         $rank++;
     }
     sendMessage($from_id, $msg);
+    die();
+}
+
+if ($text == 'پروفایل کاربری') {
+    $user = mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($from_id)");
+    $balance = $user->fetch_assoc()['balance'];
+    $wallet = $user->fetch_assoc()['wallet'] ?? 'ثبت نشده';
+    sendMessage($from_id, "به بخش پروفایل خوش آمدید موجودی شما: $balance TRX\nآدرس ولت ثبت شده: $wallet", $userProfile);
     die();
 }
