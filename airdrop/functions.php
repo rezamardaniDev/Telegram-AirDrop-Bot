@@ -33,6 +33,17 @@ function deleteMessages($chat_id, $message_id)
     ]);
 }
 
+function editMessage($chat_id, $text, $message_id, $reply_markup = null)
+{
+    TelegramAPI('editMessageText', [
+        'chat_id'      => $chat_id,
+        'text'         => $text,
+        'message_id'   => $message_id,
+        'parse_mode'   => 'Markdown',
+        'reply_markup' => $reply_markup
+    ]);
+}
+
 function convertToEnglishNumbers(string $text)
 {
     $persian = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
@@ -43,6 +54,18 @@ function convertToEnglishNumbers(string $text)
     $ArToEn = str_replace($arabic, $english, $PeToEn);
 
     return $ArToEn;
+}
+function setStep($chat_id, $step)
+{
+    global $db;
+    mysqli_query($db, "UPDATE `users` SET `step` = '$step' WHERE `chat_id` = $chat_id");
+}
+
+function getStep($chat_id)
+{
+    global $db;
+    $result = mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = $chat_id")->fetch_assoc()['step'];
+    return $result;
 }
 
 function debug($data)

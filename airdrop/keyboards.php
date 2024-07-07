@@ -17,9 +17,15 @@ $userProfile = json_encode([
     ]
 ]);
 
-$backToMainMenu = json_encode([
+$withdraw = json_encode([
+    'inline_keyboard' => [
+        [['text' => 'تایید برداشت', 'callback_data' => 'withdraw']]
+    ]
+]);
+
+$backToProfile = json_encode([
     'resize_keyboard' => true,
     'keyboard' => [
-        [['text' => 'بازگشت به منو اصلی']]
+        [['text' => 'بازگشت به پروفایل']]
     ]
 ]);

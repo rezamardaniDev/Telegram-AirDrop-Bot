@@ -1,6 +1,6 @@
 <?php
 
-// error_reporting(0);
+error_reporting(E_ERROR | E_WARNING | E_PARSE);
 
 require 'config.php';
 require 'functions.php';
@@ -15,10 +15,17 @@ if (isset($update['message'])) {
     $from_id = $update['message']['from']['id'];
     $text = $update['message']['text'];
 }
+if (isset($update['callback_query'])) {
+    $data = $update['callback_query']['data'];
+    $message_id = $update['callback_query']['message']['message_id'];
+    $chat_id = $update['callback_query']['message']['chat']['id'];
+    $from_id = $update['callback_query']['from']['id'];
+}
 
 # ----------------- [ <- main -> ] ----------------- #
 if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصلی') {
 
+    setStep($from_id, null);
     $invite_id = explode(' ', $text)[1];
 
     if ($invite_id && $invite_id != $from_id) {
@@ -66,10 +73,48 @@ if ($text == 'برترین کاربران') {
     die();
 }
 
-if ($text == 'پروفایل کاربری') {
+if ($text == 'پروفایل کاربری' || $text == 'بازگشت به پروفایل' || $text == '/profile') {
+    setStep($from_id, 'profile');
+    $user = mysqli_fetch_assoc(mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($from_id)"));
+    $balance = $user['balance'];
+    $wallet = $user['wallet'] ?? 'ثبت نشده';
+
+    sendMessage($from_id, "به بخش پروفایل خوش آمدید \n\nموجودی شما: $balance TRX\nآدرس ولت:\n`$wallet`\nشناسه کاربری: `$from_id`", $userProfile);
+    die();
+}
+
+if ($text == 'تغییر کیف پول') {
+    setStep($from_id, 'set-wallet-address');
+    sendMessage($from_id, "آدرس کیف پول خود را وارد کنید: ", $backToProfile);
+    die();
+}
+
+if ($text && getStep($from_id) == 'set-wallet-address') {
     $user = mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($from_id)");
     $balance = $user->fetch_assoc()['balance'];
-    $wallet = $user->fetch_assoc()['wallet'] ?? 'ثبت نشده';
-    sendMessage($from_id, "به بخش پروفایل خوش آمدید موجودی شما: $balance TRX\nآدرس ولت ثبت شده: $wallet", $userProfile);
+    mysqli_query($db, "UPDATE `users` SET `wallet` = '$text' WHERE `chat_id` = ($from_id)");
+    sendMessage($from_id, "آدرس کیف پول شما با موفقیت تغییر کرد!\n\nموجودی شما: $balance TRX\nآدرس ولت:\n`$text`\nشناسه کاربری: `$from_id`", $userProfile);
+    setStep($from_id, null);
+    die();
+}
+
+if ($text == 'برداشت موجودی') {
+    $userBalance = mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($from_id)")->fetch_assoc()['balance'];
+    if ($userBalance >= 5) {
+        setStep($from_id, 'withdraw');
+        $user = mysqli_fetch_assoc(mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($from_id)"));
+        $balance = $user['balance'];
+        $wallet = $user['wallet'];
+        sendMessage($from_id, "تایید تراکنش!\n\nبرداشت: $balance TRX\nبه آدرس:\n$wallet\n\nدر صورتی که اطلاعات بالا مورد تایید است لطفا روی دکمه زیر کلیک کنید", $withdraw);
+    } else {
+        sendMessage($from_id, "موجودی شما برای برداشت کافی نیست! حداقل مقدار قابل برداشت 5 ترون میباشد.", $backToProfile);
+    }
+    die();
+}
+
+if ($data == 'withdraw') {
+    mysqli_query($db, "UPDATE `users` SET `balance` = 0 WHERE `chat_id` = ($from_id) ");
+    editMessage($chat_id, "درخواست برداشت شما با موفقیت ثبت شد!", $message_id);
+    setStep($from_id, null);
     die();
 }
