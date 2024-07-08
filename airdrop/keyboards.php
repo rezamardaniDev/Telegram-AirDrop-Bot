@@ -29,3 +29,10 @@ $backToProfile = json_encode([
         [['text' => 'بازگشت به پروفایل']]
     ]
 ]);
+
+$backToMenu = json_encode([
+    'resize_keyboard' => true,
+    'keyboard' => [
+        [['text' => 'بازگشت به منو اصلی']]
+    ]
+]);

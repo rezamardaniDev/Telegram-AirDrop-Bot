@@ -118,3 +118,15 @@ if ($data == 'withdraw') {
     setStep($from_id, null);
     die();
 }
+
+if ($text == 'قوانین'){
+    $txt = mysqli_query($db, "SELECT `config_value` FROM `config` WHERE `config_key` = 'rule' ")->fetch_array()['config_value'] ?? 'ثبت نشده';
+    sendMessage($from_id, $txt, $backToMenu);
+    die();
+}
+
+if ($text == 'پشتیبانی'){
+    $txt = mysqli_query($db, "SELECT `config_value` FROM `config` WHERE `config_key` = 'support' ")->fetch_array()['config_value'] ?? 'ثبت نشده';
+    sendMessage($from_id, $txt, $backToMenu);
+    die();
+}
