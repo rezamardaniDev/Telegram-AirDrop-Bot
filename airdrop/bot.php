@@ -27,9 +27,9 @@ if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصل
 
     setStep($from_id, null);
     $invite_id = explode(' ', $text)[1];
+    $checkInvite = mysqli_query($db, "SELECT * FROM `invitations` WHERE `invited` = ($from_id)");
 
     if ($invite_id && $invite_id != $from_id) {
-        $checkInvite = mysqli_query($db, "SELECT * FROM `invitations` WHERE `invited` = ($from_id)");
         if ($checkInvite->num_rows == 0) {
             mysqli_query($db, "INSERT INTO `invitations` (`caller`, `invited`) VALUES ($invite_id, $from_id)");
             $userBalance = mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($invite_id)")->fetch_assoc()['balance'];
@@ -38,7 +38,9 @@ if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصل
             sendMessage($invite_id, "تبریک یک کاربر جدید با لینک دعوت شما به ربات پیوست!\nموجودی جدید شما: $newBalance TRX");
         }
     } else {
-        mysqli_query($db, "INSERT INTO `invitations` (`caller`, `invited`) VALUES (0, $from_id)");
+        if ($checkInvite->num_rows == 0) {
+            mysqli_query($db, "INSERT INTO `invitations` (`caller`, `invited`) VALUES (0, $from_id)");
+        }
     }
 
     $checkUser = mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($from_id)");
