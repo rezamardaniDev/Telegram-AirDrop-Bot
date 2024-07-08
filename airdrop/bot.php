@@ -22,7 +22,7 @@ if (isset($update['callback_query'])) {
     $from_id = $update['callback_query']['from']['id'];
 }
 
-# ----------------- [ <- main -> ] ----------------- #
+# ----------------- [ <- user panel -> ] ----------------- #
 if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصلی') {
 
     setStep($from_id, null);
@@ -45,7 +45,8 @@ if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصل
     if ($checkUser->num_rows == 0) {
         mysqli_query($db, "INSERT INTO `users` (`chat_id`) VALUES ($from_id)");
     }
-    sendMessage($from_id, 'سلام کاربر عزیز به ربات کسب درآمد خوش آمدید!', $userKeyboard);
+    $txt = mysqli_query($db, "SELECT `config_value` FROM `config` WHERE `config_key` = 'start' ")->fetch_array()['config_value'] ?? 'ثبت نشده';
+    sendMessage($from_id, $txt, $userKeyboard);
     die();
 }
 
@@ -119,14 +120,21 @@ if ($data == 'withdraw') {
     die();
 }
 
-if ($text == 'قوانین'){
+if ($text == 'قوانین') {
     $txt = mysqli_query($db, "SELECT `config_value` FROM `config` WHERE `config_key` = 'rule' ")->fetch_array()['config_value'] ?? 'ثبت نشده';
     sendMessage($from_id, $txt, $backToMenu);
     die();
 }
 
-if ($text == 'پشتیبانی'){
+if ($text == 'پشتیبانی') {
     $txt = mysqli_query($db, "SELECT `config_value` FROM `config` WHERE `config_key` = 'support' ")->fetch_array()['config_value'] ?? 'ثبت نشده';
     sendMessage($from_id, $txt, $backToMenu);
+    die();
+}
+
+# ----------------- [ <- admin panel -> ] ----------------- #
+if ($text == 'پنل' && in_array($from_id, $bot_admins)) {
+    setStep($from_id, 'admin-panel');
+    sendMessage($from_id, "به پنل مدیریت ربات خوش آمدید!", $admin_panel);
     die();
 }

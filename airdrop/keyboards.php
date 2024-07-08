@@ -36,3 +36,13 @@ $backToMenu = json_encode([
         [['text' => 'بازگشت به منو اصلی']]
     ]
 ]);
+
+$admin_panel = json_encode([
+    'resize_keyboard' => true,
+    'keyboard' => [
+        [['text' => 'آمار ربات']],
+        [['text' => 'پیام همگانی'], ['text' => 'فروارد همگانی']],
+        [['text' => 'تنظیمات'], ['text' => 'مدیریت کاربران']],
+        [['text' => 'بازگشت به منو اصلی']]
+    ]
+]);
