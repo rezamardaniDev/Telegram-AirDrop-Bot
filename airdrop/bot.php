@@ -8,14 +8,16 @@ require 'keyboards.php';
 
 $update = json_decode(file_get_contents('php://input'), true);
 # ----------------- [ <- variables -> ] ----------------- #
-if (isset($update['message'])) {
+if (array_key_exists('message', $update)) {
     $message_id = $update['message']['message_id'];
     $first_name = $update['message']['from']['first_name'];
     $chat_id = $update['message']['chat']['id'];
     $from_id = $update['message']['from']['id'];
     $text = $update['message']['text'];
+    $chat_type = $update['message']['chat']['type'];
+    $user = mysqli_fetch_assoc(mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($from_id)"));
 }
-if (isset($update['callback_query'])) {
+if (array_key_exists('callback_query', $update)) {
     $data = $update['callback_query']['data'];
     $message_id = $update['callback_query']['message']['message_id'];
     $chat_id = $update['callback_query']['message']['chat']['id'];
@@ -23,6 +25,9 @@ if (isset($update['callback_query'])) {
 }
 
 # ----------------- [ <- user panel -> ] ----------------- #
+if ($chat_type != 'private') {
+    die();
+}
 if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصلی') {
 
     setStep($from_id, null);
@@ -52,7 +57,7 @@ if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصل
     die();
 }
 
-if ($text == 'شروع کسب درآمد') {
+if ($text == '🌟 شروع کسب درآمد' || $text == '/link') {
     $txt =
         "🖇 لینک اختصاصی شما برای دعوت از دوستان:
 https://t.me/ReporterDevBot?start=$from_id
@@ -62,7 +67,7 @@ https://t.me/ReporterDevBot?start=$from_id
     die();
 }
 
-if ($text == 'برترین کاربران') {
+if ($text == '👥 برترین کاربران') {
     $topUsers = mysqli_query($db, "SELECT * FROM `users` ORDER BY `balance` DESC LIMIT 10");
     $txt = "👤 10 نفرات برتر ربات\n\n";
     $rank = 1;
@@ -72,13 +77,13 @@ if ($text == 'برترین کاربران') {
         $txt .= "$rank) $user ----> $balance TRX\n\n";
         $rank++;
     }
-    sendMessage($from_id, $msg);
+    sendMessage($from_id, $txt);
     die();
 }
 
-if ($text == 'پروفایل کاربری' || $text == 'بازگشت به پروفایل' || $text == '/profile') {
+if ($text == '🔰 پروفایل کاربری' || $text == 'بازگشت به پروفایل' || $text == '/profile') {
     setStep($from_id, 'profile');
-    $user = mysqli_fetch_assoc(mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($from_id)"));
+
     $balance = $user['balance'];
     $wallet = $user['wallet'] ?? 'ثبت نشده';
 
@@ -122,13 +127,13 @@ if ($data == 'withdraw') {
     die();
 }
 
-if ($text == 'قوانین') {
+if ($text == '🛑 قوانین') {
     $txt = mysqli_query($db, "SELECT `config_value` FROM `config` WHERE `config_key` = 'rule' ")->fetch_array()['config_value'] ?? 'ثبت نشده';
     sendMessage($from_id, $txt, $backToMenu);
     die();
 }
 
-if ($text == 'پشتیبانی') {
+if ($text == '☎️ پشتیبانی') {
     $txt = mysqli_query($db, "SELECT `config_value` FROM `config` WHERE `config_key` = 'support' ")->fetch_array()['config_value'] ?? 'ثبت نشده';
     sendMessage($from_id, $txt, $backToMenu);
     die();
@@ -141,7 +146,7 @@ if ($text == 'پنل' && in_array($from_id, $bot_admins)) {
     die();
 }
 
-if ($text == 'آمار ربات'){
+if ($text == 'آمار ربات') {
     $members = mysqli_query($db, "SELECT COUNT(*) AS total FROM `users`")->fetch_assoc()['total'];
     $txt = "تعداد اعضای ربات تا این لحظه: $members نفر";
     sendMessage($from_id, $txt);
