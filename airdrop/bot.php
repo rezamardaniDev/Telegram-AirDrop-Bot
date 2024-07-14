@@ -53,23 +53,23 @@ if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصل
 }
 
 if ($text == 'شروع کسب درآمد') {
-    $msg =
+    $txt =
         "🖇 لینک اختصاصی شما برای دعوت از دوستان:
 https://t.me/ReporterDevBot?start=$from_id
 ✅ برای دعوت از دوستان خود کافیست لینک بالا را با آن‌ها به اشتراک بگذارید.
     ";
-    sendMessage($from_id, $msg);
+    sendMessage($from_id, $txt);
     die();
 }
 
 if ($text == 'برترین کاربران') {
     $topUsers = mysqli_query($db, "SELECT * FROM `users` ORDER BY `balance` DESC LIMIT 10");
-    $msg = "👤 10 نفرات برتر ربات\n\n";
+    $txt = "👤 10 نفرات برتر ربات\n\n";
     $rank = 1;
     while ($res = $topUsers->fetch_assoc()) {
         $user = $res['chat_id'];
         $balance = $res['balance'];
-        $msg .= "$rank) $user ----> $balance TRX\n\n";
+        $txt .= "$rank) $user ----> $balance TRX\n\n";
         $rank++;
     }
     sendMessage($from_id, $msg);
@@ -138,5 +138,12 @@ if ($text == 'پشتیبانی') {
 if ($text == 'پنل' && in_array($from_id, $bot_admins)) {
     setStep($from_id, 'admin-panel');
     sendMessage($from_id, "به پنل مدیریت ربات خوش آمدید!", $admin_panel);
+    die();
+}
+
+if ($text == 'آمار ربات'){
+    $members = mysqli_query($db, "SELECT COUNT(*) AS total FROM `users`")->fetch_assoc()['total'];
+    $txt = "تعداد اعضای ربات تا این لحظه: $members نفر";
+    sendMessage($from_id, $txt);
     die();
 }
