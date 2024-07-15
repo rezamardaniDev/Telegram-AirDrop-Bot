@@ -37,7 +37,7 @@ if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصل
 
     if ($invite_id && $invite_id != $from_id && !$user) {
         mysqli_query($db, "INSERT INTO `invitations` (`caller`, `invited`) VALUES ($invite_id, $from_id)");
-        mysqli_query($db, "UPDATE `users` SET `balance` = `balance` + 0.5 WHERE `chat_id` = ($invite_id) ");
+        mysqli_query($db, "UPDATE `users` SET `balance` = `balance` + 0.5, `referal` = `referal` + 1 WHERE `chat_id` = ($invite_id) ");
         sendMessage($invite_id, "تبریک یک کاربر جدید با لینک دعوت شما به ربات پیوست!");
     }
     if (!$user) {
@@ -77,8 +77,18 @@ if ($text == '「 🔰 پروفایل کاربری 」' || $text == 'بازگش�
 
     $balance = $user['balance'];
     $wallet = $user['wallet'] ?? 'ثبت نشده';
+    $referal = $user['referal'];
+    $txt = "
+🔺 پروفایل شما
 
-    sendMessage($from_id, "به بخش پروفایل خوش آمدید \n\nموجودی شما: $balance TRX\nآدرس ولت:\n`$wallet`\nشناسه کاربری: `$from_id`", $userProfile);
+💳 آدرس کیف پول:
+`$wallet`
+
+💰موجودی: $balance TRX
+👀 شناسه کاربری: `$from_id`
+📊 تعداد زیرمجموعه ها: $referal
+    ";
+    sendMessage($from_id, $txt, $userProfile);
     die();
 }
 
