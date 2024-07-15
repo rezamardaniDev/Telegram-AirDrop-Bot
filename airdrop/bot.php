@@ -34,11 +34,18 @@ if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصل
     setStep($from_id, null);
     preg_match('/^(\/start) (.*)/', $text, $match);
     $invite_id = $match[2];
+    $new_sub_txt = "
+🎁 تبریک!
+یک کاربر جدید با لینک شما وارد ربات شد
+
+👤 نام شخص : $first_name
+👀 شناسه عددی : `$from_id`
+    ";
 
     if ($invite_id && $invite_id != $from_id && !$user) {
         mysqli_query($db, "INSERT INTO `invitations` (`caller`, `invited`) VALUES ($invite_id, $from_id)");
         mysqli_query($db, "UPDATE `users` SET `balance` = `balance` + 0.5, `referal` = `referal` + 1 WHERE `chat_id` = ($invite_id) ");
-        sendMessage($invite_id, "تبریک یک کاربر جدید با لینک دعوت شما به ربات پیوست!");
+        sendMessage($invite_id, $new_sub_txt);
     }
     if (!$user) {
         mysqli_query($db, "INSERT INTO `users` (`chat_id`) VALUES ($from_id)");
@@ -59,13 +66,11 @@ https://t.me/ReporterDevBot?start=$from_id
 }
 
 if ($text == '「 👥 برترین کاربران 」') {
-    $topUsers = mysqli_query($db, "SELECT * FROM `users` ORDER BY `balance` DESC LIMIT 10");
-    $txt = "👤 10 نفرات برتر ربات\n\n";
+    $topUsers = mysqli_query($db, "SELECT * FROM `users` ORDER BY `referal` DESC LIMIT 10");
+    $txt = "*💯 10 کاربر برتر ربات به ترتیب بیشترین زیرمجموعه*\n\n";
     $rank = 1;
     while ($res = $topUsers->fetch_assoc()) {
-        $user = $res['chat_id'];
-        $balance = $res['balance'];
-        $txt .= "$rank) $user ----> $balance TRX\n\n";
+        $txt .= "🔰 $rank | `{$res['chat_id']}`\n💰 *{$res['balance']} TRX* | 👤 {$res['referal']} referal\n\n";
         $rank++;
     }
     sendMessage($from_id, $txt);
