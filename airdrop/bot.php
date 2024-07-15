@@ -32,24 +32,14 @@ if ($chat_type != 'private') {
 if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصلی') {
 
     setStep($from_id, null);
-    $invite_id = explode(' ', $text)[1];
-    $checkInvite = mysqli_query($db, "SELECT * FROM `invitations` WHERE `invited` = ($from_id)");
+    preg_match('/^(\/start) (.*)/', $text, $match);
+    $invite_id = $match[2];
 
-    if ($invite_id && $invite_id != $from_id) {
-        if ($checkInvite->num_rows == 0) {
-            mysqli_query($db, "INSERT INTO `invitations` (`caller`, `invited`) VALUES ($invite_id, $from_id)");
-            $userBalance = mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($invite_id)")->fetch_assoc()['balance'];
-            $newBalance = $userBalance + 0.5;
-            mysqli_query($db, "UPDATE `users` SET `balance` = $newBalance WHERE `chat_id` = ($invite_id) ");
-            sendMessage($invite_id, "تبریک یک کاربر جدید با لینک دعوت شما به ربات پیوست!\nموجودی جدید شما: $newBalance TRX");
-        }
-    } else {
-        if ($checkInvite->num_rows == 0) {
-            mysqli_query($db, "INSERT INTO `invitations` (`caller`, `invited`) VALUES (0, $from_id)");
-        }
+    if ($invite_id && $invite_id != $from_id && !$user) {
+        mysqli_query($db, "INSERT INTO `invitations` (`caller`, `invited`) VALUES ($invite_id, $from_id)");
+        mysqli_query($db, "UPDATE `users` SET `balance` = `balance` + 0.5 WHERE `chat_id` = ($invite_id) ");
+        sendMessage($invite_id, "تبریک یک کاربر جدید با لینک دعوت شما به ربات پیوست!");
     }
-
-    // $checkUser = mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($from_id)");
     if (!$user) {
         mysqli_query($db, "INSERT INTO `users` (`chat_id`) VALUES ($from_id)");
     }
@@ -99,11 +89,9 @@ if ($text == 'تغییر کیف پول') {
 }
 
 if ($text && getStep($from_id) == 'set-wallet-address') {
-    $user = mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($from_id)");
-    $balance = $user->fetch_assoc()['balance'];
+    $balance = $user['balance'];
     mysqli_query($db, "UPDATE `users` SET `wallet` = '$text' WHERE `chat_id` = ($from_id)");
     sendMessage($from_id, "آدرس کیف پول شما با موفقیت تغییر کرد!\n\nموجودی شما: $balance TRX\nآدرس ولت:\n`$text`\nشناسه کاربری: `$from_id`", $userProfile);
-    setStep($from_id, null);
     die();
 }
 
