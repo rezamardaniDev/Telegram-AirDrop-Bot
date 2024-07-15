@@ -48,7 +48,7 @@ if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصل
     die();
 }
 
-if ($text == '🌟 شروع کسب درآمد' || $text == '/link') {
+if ($text == '「 🌟 شروع کسب درآمد 」' || $text == '/link') {
     $txt =
         "🖇 لینک اختصاصی شما برای دعوت از دوستان:
 https://t.me/ReporterDevBot?start=$from_id
@@ -58,7 +58,7 @@ https://t.me/ReporterDevBot?start=$from_id
     die();
 }
 
-if ($text == '👥 برترین کاربران') {
+if ($text == '「 👥 برترین کاربران 」') {
     $topUsers = mysqli_query($db, "SELECT * FROM `users` ORDER BY `balance` DESC LIMIT 10");
     $txt = "👤 10 نفرات برتر ربات\n\n";
     $rank = 1;
@@ -72,7 +72,7 @@ if ($text == '👥 برترین کاربران') {
     die();
 }
 
-if ($text == '🔰 پروفایل کاربری' || $text == 'بازگشت به پروفایل' || $text == '/profile') {
+if ($text == '「 🔰 پروفایل کاربری 」' || $text == 'بازگشت به پروفایل' || $text == '/profile') {
     setStep($from_id, 'profile');
 
     $balance = $user['balance'];
@@ -92,6 +92,7 @@ if ($text && getStep($from_id) == 'set-wallet-address') {
     $balance = $user['balance'];
     mysqli_query($db, "UPDATE `users` SET `wallet` = '$text' WHERE `chat_id` = ($from_id)");
     sendMessage($from_id, "آدرس کیف پول شما با موفقیت تغییر کرد!\n\nموجودی شما: $balance TRX\nآدرس ولت:\n`$text`\nشناسه کاربری: `$from_id`", $userProfile);
+    setStep($from_id, 'profile');
     die();
 }
 
@@ -120,13 +121,13 @@ if ($data == 'withdraw') {
     die();
 }
 
-if ($text == '🛑 قوانین') {
+if ($text == '「 🛑 قوانین 」') {
     $txt = mysqli_query($db, "SELECT `config_value` FROM `config` WHERE `config_key` = 'rule' ")->fetch_array()['config_value'] ?? 'ثبت نشده';
     sendMessage($from_id, $txt, $backToMenu);
     die();
 }
 
-if ($text == '☎️ پشتیبانی') {
+if ($text == '「 ☎️ پشتیبانی 」') {
     $txt = mysqli_query($db, "SELECT `config_value` FROM `config` WHERE `config_key` = 'support' ")->fetch_array()['config_value'] ?? 'ثبت نشده';
     sendMessage($from_id, $txt, $backToMenu);
     die();
@@ -143,5 +144,17 @@ if ($text == 'آمار ربات') {
     $members = mysqli_query($db, "SELECT COUNT(*) AS total FROM `users`")->fetch_assoc()['total'];
     $txt = "تعداد اعضای ربات تا این لحظه: $members نفر";
     sendMessage($from_id, $txt);
+    die();
+}
+
+if ($text == '「 ⏰ پاداش روزانه 」') {
+    $currentTime = time();
+    $stampToDb = date('Y-m-d H:i:s', $currentTime);
+    if (($currentTime - strtotime($user['daily'])) > 86400) {
+        sendMessage($from_id, "تبریک برای امروز شما 0.5 TRX دریافت کردید!");
+        mysqli_query($db, "UPDATE `users` SET `daily` = '$stampToDb', `balance` = `balance` + 0.5 WHERE `chat_id` = ($from_id)");
+    } else {
+        sendMessage($from_id, "شما هدیه امروز را دریافت کرده اید! \nفردا منتظر شما هستیم");
+    }
     die();
 }
