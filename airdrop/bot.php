@@ -133,6 +133,18 @@ if ($text == '「 ☎️ پشتیبانی 」') {
     die();
 }
 
+if ($text == '「 ⏰ پاداش روزانه 」') {
+    $currentTime = time();
+    $stampToDb = date('Y-m-d H:i:s', $currentTime);
+    if (($currentTime - strtotime($user['daily'])) > 86400) {
+        sendMessage($from_id, "تبریک برای امروز شما 0.5 TRX دریافت کردید!");
+        mysqli_query($db, "UPDATE `users` SET `daily` = '$stampToDb', `balance` = `balance` + 0.5 WHERE `chat_id` = ($from_id)");
+    } else {
+        sendMessage($from_id, "شما هدیه امروز را دریافت کرده اید! \nفردا منتظر شما هستیم");
+    }
+    die();
+}
+
 # ----------------- [ <- admin panel -> ] ----------------- #
 if ($text == 'پنل' && in_array($from_id, $bot_admins)) {
     setStep($from_id, 'admin-panel');
@@ -144,17 +156,5 @@ if ($text == 'آمار ربات') {
     $members = mysqli_query($db, "SELECT COUNT(*) AS total FROM `users`")->fetch_assoc()['total'];
     $txt = "تعداد اعضای ربات تا این لحظه: $members نفر";
     sendMessage($from_id, $txt);
-    die();
-}
-
-if ($text == '「 ⏰ پاداش روزانه 」') {
-    $currentTime = time();
-    $stampToDb = date('Y-m-d H:i:s', $currentTime);
-    if (($currentTime - strtotime($user['daily'])) > 86400) {
-        sendMessage($from_id, "تبریک برای امروز شما 0.5 TRX دریافت کردید!");
-        mysqli_query($db, "UPDATE `users` SET `daily` = '$stampToDb', `balance` = `balance` + 0.5 WHERE `chat_id` = ($from_id)");
-    } else {
-        sendMessage($from_id, "شما هدیه امروز را دریافت کرده اید! \nفردا منتظر شما هستیم");
-    }
     die();
 }
