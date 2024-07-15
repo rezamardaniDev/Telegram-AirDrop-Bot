@@ -22,6 +22,7 @@ if (array_key_exists('callback_query', $update)) {
     $message_id = $update['callback_query']['message']['message_id'];
     $chat_id = $update['callback_query']['message']['chat']['id'];
     $from_id = $update['callback_query']['from']['id'];
+    $chat_type = $update['callback_query']['message']['chat']['type'];
 }
 
 # ----------------- [ <- user panel -> ] ----------------- #
@@ -48,8 +49,8 @@ if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصل
         }
     }
 
-    $checkUser = mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($from_id)");
-    if ($checkUser->num_rows == 0) {
+    // $checkUser = mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($from_id)");
+    if (!$user) {
         mysqli_query($db, "INSERT INTO `users` (`chat_id`) VALUES ($from_id)");
     }
     $txt = mysqli_query($db, "SELECT `config_value` FROM `config` WHERE `config_key` = 'start' ")->fetch_array()['config_value'] ?? 'ثبت نشده';
@@ -107,6 +108,10 @@ if ($text && getStep($from_id) == 'set-wallet-address') {
 }
 
 if ($text == 'برداشت موجودی') {
+    if (!$user['wallet']) {
+        sendMessage($from_id, "ابتدا باید آدرس کیف پول خود را ثبت کنید!");
+        die();
+    }
     $userBalance = mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($from_id)")->fetch_assoc()['balance'];
     if ($userBalance >= 5) {
         setStep($from_id, 'withdraw');
