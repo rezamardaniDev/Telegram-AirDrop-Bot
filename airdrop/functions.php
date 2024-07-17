@@ -44,6 +44,15 @@ function editMessage($chat_id, $text, $message_id, $reply_markup = null)
     ]);
 }
 
+function sendPhoto($chat_id, $photo, $caption)
+{
+    TelegramAPI("sendPhoto", [
+        'chat_id'     => $chat_id,
+        'photo'       => $photo,
+        'caption'     => $caption
+    ]);
+}
+
 function convertToEnglishNumbers(string $text)
 {
     $persian = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
