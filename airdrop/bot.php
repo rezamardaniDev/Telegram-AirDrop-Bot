@@ -29,30 +29,35 @@ if (array_key_exists('callback_query', $update)) {
 if ($chat_type != 'private') {
     die();
 }
+
 if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصلی') {
 
-    setStep($from_id, null);
+    setStep($from_id, 'home');
     preg_match('/^(\/start) (.*)/', $text, $match);
-    $invite_id = $match[2];
-    $new_sub_txt = "
-🎁 تبریک!
-یک کاربر جدید با لینک شما وارد ربات شد
+    $user_invite_id = $match[2];
 
-👤 نام شخص : $first_name
-👀 شناسه عددی : `$from_id`
-    ";
-
-    if ($invite_id && $invite_id != $from_id && !$user) {
-        $validate_referal_id = mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($invite_id)");
+    if ($user_invite_id && $user_invite_id != $from_id && !$user) {
+        $validate_referal_id = mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($user_invite_id)");
         if ($validate_referal_id) {
-            mysqli_query($db, "INSERT INTO `invitations` (`caller`, `invited`) VALUES ($invite_id, $from_id)");
-            mysqli_query($db, "UPDATE `users` SET `balance` = `balance` + 0.5, `referal` = `referal` + 1 WHERE `chat_id` = ($invite_id) ");
-            sendMessage($invite_id, $new_sub_txt);
+
+            $new_sub_txt = "
+            🎁 تبریک!
+            یک کاربر جدید با لینک شما وارد ربات شد
+            
+            👤 نام شخص : $first_name
+            👀 شناسه عددی : `$from_id`
+                ";
+
+            mysqli_query($db, "INSERT INTO `invitations` (`caller`, `invited`) VALUES ($user_invite_id, $from_id)");
+            mysqli_query($db, "UPDATE `users` SET `balance` = `balance` + 0.5, `referal` = `referal` + 1 WHERE `chat_id` = ($user_invite_id) ");
+            sendMessage($user_invite_id, $new_sub_txt);
         }
     }
+
     if (!$user) {
         mysqli_query($db, "INSERT INTO `users` (`chat_id`) VALUES ($from_id)");
     }
+
     $txt = mysqli_query($db, "SELECT `config_value` FROM `config` WHERE `config_key` = 'start' ")->fetch_array()['config_value'] ?? 'ثبت نشده';
     sendMessage($from_id, $txt, $userKeyboard);
     die();
@@ -152,17 +157,21 @@ if ($text == '「 ☎️ پشتیبانی 」') {
     die();
 }
 
-if ($text == '「 ⏰ پاداش روزانه 」') {
-    $currentTime = time();
-    $stampToDb = date('Y-m-d H:i:s', $currentTime);
-    if (($currentTime - strtotime($user['daily'])) > 86400) {
-        sendMessage($from_id, "تبریک برای امروز شما 0.5 TRX دریافت کردید!");
-        mysqli_query($db, "UPDATE `users` SET `daily` = '$stampToDb', `balance` = `balance` + 0.5 WHERE `chat_id` = ($from_id)");
-    } else {
-        sendMessage($from_id, "شما هدیه امروز را دریافت کرده اید! \nفردا منتظر شما هستیم");
-    }
-    die();
-}
+// if ($text == '「 ⏰ پاداش روزانه 」') {
+//     $currentTime = strtotime(date('Y-m-d H:i:s'));
+//     $userDbTime = strtotime(mysqli_query($db, "SELECT *  FROM `users` WHERE `chat_id` = ($from_id)")->fetch_assoc()['daily']);
+
+//     $diffInSeconds = abs($timestamp2 - $timestamp1);
+//     $diffInHours = $diffInSeconds / 3600;
+
+//     if ($diffInHours > 24) {
+//         sendMessage($from_id, "تبریک برای امروز شما 0.5 TRX دریافت کردید!");
+//         mysqli_query($db, "UPDATE `users` SET `daily` = '$currentTime', `balance` = `balance` + 0.5 WHERE `chat_id` = ($from_id)");
+//     } else {
+//         sendMessage($from_id, "شما هدیه امروز را دریافت کرده اید! \nفردا منتظر شما هستیم");
+//     }
+//     die();
+// }
 
 # ----------------- [ <- admin panel -> ] ----------------- #
 if ($text == 'پنل' && in_array($from_id, $bot_admins)) {
