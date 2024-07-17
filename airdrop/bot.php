@@ -43,9 +43,12 @@ if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصل
     ";
 
     if ($invite_id && $invite_id != $from_id && !$user) {
-        mysqli_query($db, "INSERT INTO `invitations` (`caller`, `invited`) VALUES ($invite_id, $from_id)");
-        mysqli_query($db, "UPDATE `users` SET `balance` = `balance` + 0.5, `referal` = `referal` + 1 WHERE `chat_id` = ($invite_id) ");
-        sendMessage($invite_id, $new_sub_txt);
+        $validate_referal_id = mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($invite_id)");
+        if ($validate_referal_id) {
+            mysqli_query($db, "INSERT INTO `invitations` (`caller`, `invited`) VALUES ($invite_id, $from_id)");
+            mysqli_query($db, "UPDATE `users` SET `balance` = `balance` + 0.5, `referal` = `referal` + 1 WHERE `chat_id` = ($invite_id) ");
+            sendMessage($invite_id, $new_sub_txt);
+        }
     }
     if (!$user) {
         mysqli_query($db, "INSERT INTO `users` (`chat_id`) VALUES ($from_id)");
