@@ -106,23 +106,13 @@ if ($text == 'برداشت موجودی') {
         die();
     }
 
-    $userBalance = mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($from_id)")->fetch_assoc()['balance'];
-    if ($userBalance >= 5) {
-
+    $user_Balance = $user['balance'];
+    if ($user_Balance >= 5) {
         setStep($from_id, 'withdraw');
-        $user = mysqli_fetch_assoc(mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($from_id)"));
-        $balance = $user['balance'];
-        $wallet = $user['wallet'];
-        $txt = "
-♻️ اطلاعات تراکنش!
-
-💎 برداشت : $balance TRX
-💳 به آدرس : 
-`$wallet`
-
-❗️در صورتی که اطلاعات بالا مورد تایید است لطفا روی دکمه زیر کلیک کنید
-        ";
-        sendMessage($from_id, $txt, $withdraw);
+        $user_Balance = $user['balance'];
+        $user_Wallet = $user['wallet'];
+        $withdraw_Text = "♻️ اطلاعات تراکنش!\n\n💎 برداشت : $user_Balance TRX\n💳 به آدرس :\n`$user_Wallet`\n\n❗️در صورتی که اطلاعات بالا مورد تایید است لطفا روی دکمه زیر کلیک کنید";
+        sendMessage($from_id, $withdraw_Text, $withdraw);
     } else {
         sendMessage($from_id, "موجودی شما برای برداشت کافی نیست! حداقل مقدار قابل برداشت 5 ترون میباشد.", $backToProfile);
     }
@@ -130,49 +120,28 @@ if ($text == 'برداشت موجودی') {
 }
 
 if ($data == 'withdraw' && getStep($from_id) == 'withdraw') {
-    $check_withdraw_request = mysqli_query($db, "SELECT * FROM `withdraw_request` WHERE `chat_id` = ($from_id) AND `status` = 'registered' ");
-    if ($check_withdraw_request->num_rows == 0) {
+    $check_Withdraw_Request = $db->query("SELECT * FROM `withdraw_request` WHERE `chat_id` = ($from_id) AND `status` = 'registered' ");
+    if ($check_Withdraw_Request->num_rows == 0) {
 
-        $user_wallet = $user['wallet'];
-        $user_balance = $user['balance'];
-        $withdraw_time = date("Y/m/d H:i:s");
+        $user_Balance = $user['balance'];
+        $user_Wallet = $user['wallet'];
+        $withdraw_Time = date("Y/m/d H:i:s");
 
-        mysqli_query($db, "INSERT INTO `withdraw_request` (`chat_id`, `wallet`, `amount`) VALUES ($from_id, '$user_wallet', $user_balance)");
-        mysqli_query($db, "UPDATE `users` SET `balance` = 0 WHERE `chat_id` = ($from_id) ");
-        $recept = mysqli_query($db, "SELECT * FROM `withdraw_request` WHERE `chat_id` = ($from_id) AND `status` = 'registered' ")->fetch_array();
-        $recept_txt = "
-🤖 درخواست برداشت جدید
-
-👤 شناسه کاربر : $from_id
-
-🔰 مقدار برداشت : {$recept['amount']} TRX
-💳 آدرس کیف پول : 
-`{$recept['wallet']}`
-
-تاریخ درخواست :
-$withdraw_time
-        ";
-        sendMessage(-1002180465057, $recept_txt, json_encode([
+        $db->query("INSERT INTO `withdraw_request` (`chat_id`, `wallet`, `amount`) VALUES ($from_id, '$user_Wallet', $user_Balance)");
+        $db->query("UPDATE `users` SET `balance` = 0 WHERE `chat_id` = ($from_id) ");
+        $seccess_Receipt = $db->query("SELECT * FROM `withdraw_request` WHERE `chat_id` = ($from_id) AND `status` = 'registered' ")->fetch_array();
+        $admin_Receipt_Text = "🤖 درخواست برداشت جدید\n\n👤 شناسه کاربر : $from_id\n\n🔰 مقدار برداشت : {$seccess_Receipt['amount']} TRX\n💳 آدرس کیف پول :\n`{$seccess_Receipt['wallet']}`\n\nتاریخ درخواست :\n$withdraw_Time";
+        sendMessage(-1002180465057, $admin_Receipt_Text, json_encode([
             'inline_keyboard' => [
                 [['text' => 'تایید واریز', 'callback_data' => $from_id]]
             ]
         ]));
 
-        $txt = "
-✅ درخواست برداشت شما در صف انتظار قرار گرفت!
-
-🔰 مقدار برداشت : {$recept['amount']} TRX
-💳 آدرس کیف پول : 
-`{$recept['wallet']}`
-
-⏰ زمان ثبت درخواست :
-$withdraw_time
-        ";
-
-        editMessage($chat_id, $txt, $message_id);
+        $Receipt_Text = "✅ درخواست برداشت شما در صف انتظار قرار گرفت!\n\n🔰 مقدار برداشت : {$seccess_Receipt['amount']} TRX\n💳 آدرس کیف پول :\n`{$seccess_Receipt['wallet']}`\n\n⏰ زمان ثبت درخواست :\n$withdraw_Time";
+        editMessage($chat_id, $Receipt_Text, $message_id);
         setStep($from_id, 'profile');
     } else {
-        editMessage($chat_id, "شما یک درخواست تایید نشده دارید! لطفا تا بررسی آن صبر کنید", $message_id);
+        editMessage($chat_id, "شما از قبل یک درخواست پردازش نشده دارید!\nبرای درخواست جدید باید تا تایید درخواست قبلی خود صبر کنید.", $message_id);
     }
     die();
 }
