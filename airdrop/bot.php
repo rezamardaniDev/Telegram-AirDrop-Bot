@@ -15,7 +15,7 @@ if (array_key_exists('message', $update)) {
     $from_id = $update['message']['from']['id'];
     $text = $update['message']['text'];
     $chat_type = $update['message']['chat']['type'];
-    $user = mysqli_fetch_assoc(mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($from_id)"));
+    $user = $db->query("SELECT * FROM `users` WHERE `chat_id` = ($from_id)")->fetch_assoc();
 }
 if (array_key_exists('callback_query', $update)) {
     $data = $update['callback_query']['data'];
@@ -23,8 +23,8 @@ if (array_key_exists('callback_query', $update)) {
     $chat_id = $update['callback_query']['message']['chat']['id'];
     $from_id = $update['callback_query']['from']['id'];
     $chat_type = $update['callback_query']['message']['chat']['type'];
+    $user = $db->query("SELECT * FROM `users` WHERE `chat_id` = ($from_id)")->fetch_assoc();
 }
-
 # ----------------- [ <- user panel -> ] ----------------- #
 if ($chat_type != 'private') {
     die();
@@ -33,14 +33,12 @@ if ($chat_type != 'private') {
 if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصلی') {
 
     setStep($from_id, 'home');
-    preg_match('/^(\/start) (.*)/', $text, $match);
-    $user_invite_id = $match[2];
+    $user_Invite_Id = explode(" ", $text)[1];
 
-    if ($user_invite_id && $user_invite_id != $from_id && !$user) {
-        $validate_referal_id = mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($user_invite_id)");
-        if ($validate_referal_id) {
-
-            $new_sub_txt = "
+    if ($user_Invite_Id && $user_Invite_Id != $from_id && !$user) {
+        $validate_Referal_Id = $db->query("SELECT * FROM `users` WHERE `chat_id` = ($user_Invite_Id)"); // validate invite id
+        if ($validate_Referal_Id) {
+            $new_Invitation_Text = "
             🎁 تبریک!
             یک کاربر جدید با لینک شما وارد ربات شد
             
@@ -48,9 +46,9 @@ if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصل
             👀 شناسه عددی : `$from_id`
                 ";
 
-            mysqli_query($db, "INSERT INTO `invitations` (`caller`, `invited`) VALUES ($user_invite_id, $from_id)");
-            mysqli_query($db, "UPDATE `users` SET `balance` = `balance` + 0.5, `referal` = `referal` + 1 WHERE `chat_id` = ($user_invite_id) ");
-            sendMessage($user_invite_id, $new_sub_txt);
+            $db->query("INSERT INTO `invitations` (`caller`, `invited`) VALUES ($user_Invite_Id, $from_id)");
+            $db->query("UPDATE `users` SET `balance` = `balance` + 0.5, `referal` = `referal` + 1 WHERE `chat_id` = ($user_Invite_Id) ");
+            sendMessage($user_Invite_Id, $new_Invitation_Text);
         }
     }
 
@@ -121,27 +119,106 @@ if ($text && getStep($from_id) == 'set-wallet-address') {
 }
 
 if ($text == 'برداشت موجودی') {
+
     if (!$user['wallet']) {
         sendMessage($from_id, "ابتدا باید آدرس کیف پول خود را ثبت کنید!");
         die();
     }
+
     $userBalance = mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($from_id)")->fetch_assoc()['balance'];
     if ($userBalance >= 5) {
+
         setStep($from_id, 'withdraw');
         $user = mysqli_fetch_assoc(mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = ($from_id)"));
         $balance = $user['balance'];
         $wallet = $user['wallet'];
-        sendMessage($from_id, "تایید تراکنش!\n\nبرداشت: $balance TRX\nبه آدرس:\n$wallet\n\nدر صورتی که اطلاعات بالا مورد تایید است لطفا روی دکمه زیر کلیک کنید", $withdraw);
+        $txt = "
+♻️ اطلاعات تراکنش!
+
+💎 برداشت : $balance TRX
+💳 به آدرس : 
+`$wallet`
+
+❗️در صورتی که اطلاعات بالا مورد تایید است لطفا روی دکمه زیر کلیک کنید
+        ";
+        sendMessage($from_id, $txt, $withdraw);
     } else {
         sendMessage($from_id, "موجودی شما برای برداشت کافی نیست! حداقل مقدار قابل برداشت 5 ترون میباشد.", $backToProfile);
     }
     die();
 }
 
-if ($data == 'withdraw') {
-    mysqli_query($db, "UPDATE `users` SET `balance` = 0 WHERE `chat_id` = ($from_id) ");
-    editMessage($chat_id, "درخواست برداشت شما با موفقیت ثبت شد!", $message_id);
-    setStep($from_id, null);
+if ($data == 'withdraw' && getStep($from_id) == 'withdraw') {
+    $check_withdraw_request = mysqli_query($db, "SELECT * FROM `withdraw_request` WHERE `chat_id` = ($from_id) AND `status` = 'registered' ");
+    if ($check_withdraw_request->num_rows == 0) {
+
+        $user_wallet = $user['wallet'];
+        $user_balance = $user['balance'];
+        $withdraw_time = date("Y/m/d H:i:s");
+
+        mysqli_query($db, "INSERT INTO `withdraw_request` (`chat_id`, `wallet`, `amount`) VALUES ($from_id, '$user_wallet', $user_balance)");
+        mysqli_query($db, "UPDATE `users` SET `balance` = 0 WHERE `chat_id` = ($from_id) ");
+        $recept = mysqli_query($db, "SELECT * FROM `withdraw_request` WHERE `chat_id` = ($from_id) AND `status` = 'registered' ")->fetch_array();
+        $recept_txt = "
+🤖 درخواست برداشت جدید
+
+👤 شناسه کاربر : $from_id
+
+🔰 مقدار برداشت : {$recept['amount']} TRX
+💳 آدرس کیف پول : 
+`{$recept['wallet']}`
+
+تاریخ درخواست :
+$withdraw_time
+        ";
+        sendMessage(-1002180465057, $recept_txt, json_encode([
+            'inline_keyboard' => [
+                [['text' => 'تایید واریز', 'callback_data' => $from_id]]
+            ]
+        ]));
+
+        $txt = "
+✅ درخواست برداشت شما در صف انتظار قرار گرفت!
+
+🔰 مقدار برداشت : {$recept['amount']} TRX
+💳 آدرس کیف پول : 
+`{$recept['wallet']}`
+
+⏰ زمان ثبت درخواست :
+$withdraw_time
+        ";
+
+        editMessage($chat_id, $txt, $message_id);
+        setStep($from_id, 'profile');
+    } else {
+        editMessage($chat_id, "شما یک درخواست تایید نشده دارید! لطفا تا بررسی آن صبر کنید", $message_id);
+    }
+    die();
+}
+
+if ($data and $data != 'withdraw') {
+
+    sendMessage($data, "کاربر گرامی واریز برای شما انجام شد!");
+    $recept = mysqli_query($db, "SELECT * FROM `withdraw_request` WHERE `chat_id` = ($data) AND `status` = 'registered' ")->fetch_array();
+    $withdraw_time = date("Y/m/d H:i:s");
+    $recept_txt = "
+🤖 واریز انجام شد
+
+👤 شناسه کاربر : $data
+
+🔰 مقدار برداشت : {$recept['amount']} TRX
+💳 آدرس کیف پول : 
+`{$recept['wallet']}`
+
+تاریخ واریز :
+$withdraw_time
+    ";
+    editMessage(-1002180465057, $recept_txt, $message_id, json_encode([
+        'inline_keyboard' => [
+            [['text' => 'واریز شد', 'callback_data' => 'done']]
+        ]
+    ]));
+    mysqli_query($db, "UPDATE `withdraw_request` SET `status` = 'done' WHERE `chat_id` = ($data) ");
     die();
 }
 
@@ -156,22 +233,6 @@ if ($text == '「 ☎️ پشتیبانی 」') {
     sendMessage($from_id, $txt, $backToMenu);
     die();
 }
-
-// if ($text == '「 ⏰ پاداش روزانه 」') {
-//     $currentTime = strtotime(date('Y-m-d H:i:s'));
-//     $userDbTime = strtotime(mysqli_query($db, "SELECT *  FROM `users` WHERE `chat_id` = ($from_id)")->fetch_assoc()['daily']);
-
-//     $diffInSeconds = abs($timestamp2 - $timestamp1);
-//     $diffInHours = $diffInSeconds / 3600;
-
-//     if ($diffInHours > 24) {
-//         sendMessage($from_id, "تبریک برای امروز شما 0.5 TRX دریافت کردید!");
-//         mysqli_query($db, "UPDATE `users` SET `daily` = '$currentTime', `balance` = `balance` + 0.5 WHERE `chat_id` = ($from_id)");
-//     } else {
-//         sendMessage($from_id, "شما هدیه امروز را دریافت کرده اید! \nفردا منتظر شما هستیم");
-//     }
-//     die();
-// }
 
 # ----------------- [ <- admin panel -> ] ----------------- #
 if ($text == 'پنل' && in_array($from_id, $bot_admins)) {

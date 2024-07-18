@@ -20,7 +20,7 @@ $userProfile = json_encode([
 
 $withdraw = json_encode([
     'inline_keyboard' => [
-        [['text' => 'تایید برداشت', 'callback_data' => 'withdraw']]
+        [['text' => '🟢 تایید برداشت 🟢', 'callback_data' => 'withdraw']]
     ]
 ]);
 
