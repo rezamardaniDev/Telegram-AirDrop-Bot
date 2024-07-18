@@ -38,14 +38,7 @@ if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصل
     if ($user_Invite_Id && $user_Invite_Id != $from_id && !$user) {
         $validate_Referal_Id = $db->query("SELECT * FROM `users` WHERE `chat_id` = ($user_Invite_Id)"); // validate invite id
         if ($validate_Referal_Id) {
-            $new_Invitation_Text = "
-            🎁 تبریک!
-            یک کاربر جدید با لینک شما وارد ربات شد
-            
-            👤 نام شخص : $first_name
-            👀 شناسه عددی : `$from_id`
-                ";
-
+            $new_Invitation_Text = "🎁 تبریک!\nیک کاربر جدید با لینک شما وارد ربات شد\n\n👤 نام شخص : $first_name\n👀 شناسه عددی : `$from_id`\n";
             $db->query("INSERT INTO `invitations` (`caller`, `invited`) VALUES ($user_Invite_Id, $from_id)");
             $db->query("UPDATE `users` SET `balance` = `balance` + 0.5, `referal` = `referal` + 1 WHERE `chat_id` = ($user_Invite_Id) ");
             sendMessage($user_Invite_Id, $new_Invitation_Text);
@@ -56,65 +49,53 @@ if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصل
         mysqli_query($db, "INSERT INTO `users` (`chat_id`) VALUES ($from_id)");
     }
 
-    $txt = mysqli_query($db, "SELECT `config_value` FROM `config` WHERE `config_key` = 'start' ")->fetch_array()['config_value'] ?? 'ثبت نشده';
-    sendMessage($from_id, $txt, $userKeyboard);
+    $welcome_Text = $db->query("SELECT `config_value` FROM `config` WHERE `config_key` = 'start' ")->fetch_array()['config_value'] ?? 'ثبت نشده';
+    sendMessage($from_id, $welcome_Text, $userKeyboard);
     die();
 }
 
 if ($text == '「 🌟 شروع کسب درآمد 」' || $text == '/link') {
-    $txt =
-        "🖇 لینک اختصاصی شما برای دعوت از دوستان:
-https://t.me/ReporterDevBot?start=$from_id
-
-✅ برای دعوت از دوستان خود کافیست لینک بالا را با آن‌ها به اشتراک بگذارید.
-    ";
-    sendPhoto($from_id, "https://fara-it.ir/airdrop/banner.jpg", $txt);
+    $invite_Banner_Text = "🖇 لینک اختصاصی شما برای دعوت از دوستان:\nhttps://t.me/ReporterDevBot?start=$from_id\n\n✅ برای دعوت از دوستان خود کافیست لینک بالا را با آن‌ها به اشتراک بگذارید.";
+    sendPhoto($from_id, "https://fara-it.ir/airdrop/banner.jpg", $invite_Banner_Text);
     die();
 }
 
 if ($text == '「 👥 برترین کاربران 」') {
-    $topUsers = mysqli_query($db, "SELECT * FROM `users` ORDER BY `referal` DESC LIMIT 10");
-    $txt = "*💯 10 کاربر برتر ربات به ترتیب بیشترین زیرمجموعه*\n\n";
+    $top_Users = $db->query("SELECT * FROM `users` ORDER BY `referal` DESC LIMIT 10");
+    $top_Users_Text = "*💯 10 کاربر برتر ربات به ترتیب بیشترین زیرمجموعه*\n\n";
     $rank = 1;
-    while ($res = $topUsers->fetch_assoc()) {
-        $txt .= "🔰 $rank | `{$res['chat_id']}`\n💰 *{$res['balance']} TRX* | 👤 {$res['referal']} referal\n\n";
+    while ($result = $top_Users->fetch_assoc()) {
+        $top_Users_Text .= "🔰 $rank | `{$result['chat_id']}`\n💰 *{$result['balance']} TRX* | 👤 {$result['referal']} referal\n\n";
         $rank++;
     }
-    sendMessage($from_id, $txt);
+    sendMessage($from_id, $top_Users_Text);
     die();
 }
 
 if ($text == '「 🔰 پروفایل کاربری 」' || $text == 'بازگشت به پروفایل' || $text == '/profile') {
     setStep($from_id, 'profile');
-
-    $balance = $user['balance'];
-    $wallet = $user['wallet'] ?? 'ثبت نشده';
-    $referal = $user['referal'];
-    $txt = "
-🔺 پروفایل شما
-
-💳 آدرس کیف پول:
-`$wallet`
-
-💰موجودی: $balance TRX
-👀 شناسه کاربری: `$from_id`
-📊 تعداد زیرمجموعه ها: $referal
-    ";
-    sendMessage($from_id, $txt, $userProfile);
+    $user_Balance = $user['balance'];
+    $user_Wallet = $user['wallet'] ?? 'ثبت نشده';
+    $user_Referal = $user['referal'];
+    $user_Info_Text = "🔺 پروفایل شما\n\n💳 آدرس کیف پول:\n`$user_Wallet`\n\n💰موجودی: $user_Balance TRX\n👀 شناسه کاربری: `$from_id`\n📊 تعداد زیرمجموعه ها: $user_Referal";
+    sendMessage($from_id, $user_Info_Text, $userProfile);
     die();
 }
 
-if ($text == 'تغییر کیف پول') {
+if ($text == 'تغییر کیف پول' && getStep($from_id) == 'profile') {
     setStep($from_id, 'set-wallet-address');
     sendMessage($from_id, "آدرس کیف پول خود را وارد کنید: ", $backToProfile);
     die();
 }
 
 if ($text && getStep($from_id) == 'set-wallet-address') {
-    $balance = $user['balance'];
-    mysqli_query($db, "UPDATE `users` SET `wallet` = '$text' WHERE `chat_id` = ($from_id)");
-    sendMessage($from_id, "آدرس کیف پول شما با موفقیت تغییر کرد!\n\nموجودی شما: $balance TRX\nآدرس ولت:\n`$text`\nشناسه کاربری: `$from_id`", $userProfile);
     setStep($from_id, 'profile');
+    $db->query("UPDATE `users` SET `wallet` = '$text' WHERE `chat_id` = ($from_id)");
+    $user_Balance = $user['balance'];
+    $user_Wallet = $text;
+    $user_Referal = $user['referal'];
+    $user_Info_Text = "آدرس کیف پول شما با موفقیت تغییر کرد!\n\n💳 آدرس کیف پول:\n`$user_Wallet`\n\n💰موجودی: $user_Balance TRX\n👀 شناسه کاربری: `$from_id`\n📊 تعداد زیرمجموعه ها: $user_Referal";
+    sendMessage($from_id, $user_Info_Text, $userProfile);
     die();
 }
 
