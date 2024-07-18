@@ -26,9 +26,9 @@ if (array_key_exists('callback_query', $update)) {
     $user = $db->query("SELECT * FROM `users` WHERE `chat_id` = ($from_id)")->fetch_assoc();
 }
 # ----------------- [ <- user panel -> ] ----------------- #
-if ($chat_type != 'private') {
-    die();
-}
+// if ($chat_type != 'private') {
+//     die();
+// }
 
 if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصلی') {
 
@@ -36,7 +36,11 @@ if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصل
     $user_Invite_Id = explode(" ", $text)[1];
 
     if ($user_Invite_Id && $user_Invite_Id != $from_id && !$user) {
-        $validate_Referal_Id = $db->query("SELECT * FROM `users` WHERE `chat_id` = ($user_Invite_Id)"); // validate invite id
+        $stmt = $db->prepare("SELECT * FROM `users` WHERE `chat_id` = ?");
+        $stmt->bind_param("i", $user_Invite_Id);
+        $stmt->execute();
+        $validate_Referal_Id = $stmt->get_result();
+        
         if ($validate_Referal_Id) {
             $new_Invitation_Text = "🎁 تبریک!\nیک کاربر جدید با لینک شما وارد ربات شد\n\n👤 نام شخص : $first_name\n👀 شناسه عددی : `$from_id`\n";
             $db->query("INSERT INTO `invitations` (`caller`, `invited`) VALUES ($user_Invite_Id, $from_id)");
@@ -146,41 +150,29 @@ if ($data == 'withdraw' && getStep($from_id) == 'withdraw') {
     die();
 }
 
-if ($data and $data != 'withdraw') {
-
-    sendMessage($data, "کاربر گرامی واریز برای شما انجام شد!");
-    $recept = mysqli_query($db, "SELECT * FROM `withdraw_request` WHERE `chat_id` = ($data) AND `status` = 'registered' ")->fetch_array();
-    $withdraw_time = date("Y/m/d H:i:s");
-    $recept_txt = "
-🤖 واریز انجام شد
-
-👤 شناسه کاربر : $data
-
-🔰 مقدار برداشت : {$recept['amount']} TRX
-💳 آدرس کیف پول : 
-`{$recept['wallet']}`
-
-تاریخ واریز :
-$withdraw_time
-    ";
-    editMessage(-1002180465057, $recept_txt, $message_id, json_encode([
+if ($data && $data != 'withdraw') {
+    $receipt = $db->query("SELECT * FROM `withdraw_request` WHERE `chat_id` = $data AND `status` = 'registered' ")->fetch_array();
+    $withdraw_Time = date("Y/m/d H:i:s");
+    $Receipt_Text = "🤖 واریز انجام شد\n\n👤 شناسه کاربر : {$receipt['chat_id']}\n\n🔰 مقدار برداشت : {$receipt['amount']} TRX\n💳 آدرس کیف پول :\n`{$receipt['wallet']}`\n\nتاریخ واریز :\n$withdraw_Time";
+    editMessage(-1002180465057, $Receipt_Text, $message_id, json_encode([
         'inline_keyboard' => [
             [['text' => 'واریز شد', 'callback_data' => 'done']]
         ]
     ]));
-    mysqli_query($db, "UPDATE `withdraw_request` SET `status` = 'done' WHERE `chat_id` = ($data) ");
+    $db->query("UPDATE `withdraw_request` SET `status` = 'done' WHERE `chat_id` = $data ");
+    sendMessage($data, "کاربر گرامی درخواست برداشت شما با موفقیت توسط ادمین تایید و واریز شد.");
     die();
 }
 
 if ($text == '「 🛑 قوانین 」') {
-    $txt = mysqli_query($db, "SELECT `config_value` FROM `config` WHERE `config_key` = 'rule' ")->fetch_array()['config_value'] ?? 'ثبت نشده';
-    sendMessage($from_id, $txt, $backToMenu);
+    $rule_Text = $db->query("SELECT `config_value` FROM `config` WHERE `config_key` = 'rule' ")->fetch_array()['config_value'] ?? 'ثبت نشده';
+    sendMessage($from_id, $rule_Text, $backToMenu);
     die();
 }
 
 if ($text == '「 ☎️ پشتیبانی 」') {
-    $txt = mysqli_query($db, "SELECT `config_value` FROM `config` WHERE `config_key` = 'support' ")->fetch_array()['config_value'] ?? 'ثبت نشده';
-    sendMessage($from_id, $txt, $backToMenu);
+    $support_Text = $db->query("SELECT `config_value` FROM `config` WHERE `config_key` = 'support' ")->fetch_array()['config_value'] ?? 'ثبت نشده';
+    sendMessage($from_id, $support_Text, $backToMenu);
     die();
 }
 
