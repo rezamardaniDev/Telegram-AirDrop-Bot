@@ -40,7 +40,7 @@ if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصل
         $stmt->bind_param("i", $user_Invite_Id);
         $stmt->execute();
         $validate_Referal_Id = $stmt->get_result();
-        
+
         if ($validate_Referal_Id) {
             $new_Invitation_Text = "🎁 تبریک!\nیک کاربر جدید با لینک شما وارد ربات شد\n\n👤 نام شخص : $first_name\n👀 شناسه عددی : `$from_id`\n";
             $db->query("INSERT INTO `invitations` (`caller`, `invited`) VALUES ($user_Invite_Id, $from_id)");
@@ -50,7 +50,9 @@ if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصل
     }
 
     if (!$user) {
-        mysqli_query($db, "INSERT INTO `users` (`chat_id`) VALUES ($from_id)");
+        $stmt = $db->prepare("INSERT INTO `users` (`chat_id`) VALUES ($from_id)");
+        $stmt->bind_param("i", $from_id);
+        $stmt->execute();
     }
 
     $welcome_Text = $db->query("SELECT `config_value` FROM `config` WHERE `config_key` = 'start' ")->fetch_array()['config_value'] ?? 'ثبت نشده';
@@ -134,7 +136,7 @@ if ($data == 'withdraw' && getStep($from_id) == 'withdraw') {
         $db->query("INSERT INTO `withdraw_request` (`chat_id`, `wallet`, `amount`) VALUES ($from_id, '$user_Wallet', $user_Balance)");
         $db->query("UPDATE `users` SET `balance` = 0 WHERE `chat_id` = ($from_id) ");
         $seccess_Receipt = $db->query("SELECT * FROM `withdraw_request` WHERE `chat_id` = ($from_id) AND `status` = 'registered' ")->fetch_array();
-        $admin_Receipt_Text = "🤖 درخواست برداشت جدید\n\n👤 شناسه کاربر : $from_id\n\n🔰 مقدار برداشت : {$seccess_Receipt['amount']} TRX\n💳 آدرس کیف پول :\n`{$seccess_Receipt['wallet']}`\n\nتاریخ درخواست :\n$withdraw_Time";
+        $admin_Receipt_Text = "🟡 درخواست برداشت جدید\n\n▫️ شناسه کاربر : $from_id\n▫️ مقدار برداشت : {$seccess_Receipt['amount']} TRX\n▫️ آدرس کیف پول :\n\n`{$seccess_Receipt['wallet']}`\n\nتاریخ درخواست :\n$withdraw_Time";
         sendMessage(-1002180465057, $admin_Receipt_Text, json_encode([
             'inline_keyboard' => [
                 [['text' => 'تایید واریز', 'callback_data' => $from_id]]
@@ -150,17 +152,17 @@ if ($data == 'withdraw' && getStep($from_id) == 'withdraw') {
     die();
 }
 
-if ($data && $data != 'withdraw') {
+if ($data) {
     $receipt = $db->query("SELECT * FROM `withdraw_request` WHERE `chat_id` = $data AND `status` = 'registered' ")->fetch_array();
     $withdraw_Time = date("Y/m/d H:i:s");
-    $Receipt_Text = "🤖 واریز انجام شد\n\n👤 شناسه کاربر : {$receipt['chat_id']}\n\n🔰 مقدار برداشت : {$receipt['amount']} TRX\n💳 آدرس کیف پول :\n`{$receipt['wallet']}`\n\nتاریخ واریز :\n$withdraw_Time";
+    $Receipt_Text = "🟢 واریز انجام شد\n\n▫️ شناسه کاربر : {$receipt['chat_id']}\n▫️ مقدار برداشت : {$receipt['amount']} TRX\n▫️ آدرس کیف پول :\n\n`{$receipt['wallet']}`\n\nتاریخ درخواست :\n{$receipt['created_at']}\nتاریخ واریز :\n$withdraw_Time";
     editMessage(-1002180465057, $Receipt_Text, $message_id, json_encode([
         'inline_keyboard' => [
             [['text' => 'واریز شد', 'callback_data' => 'done']]
         ]
     ]));
     $db->query("UPDATE `withdraw_request` SET `status` = 'done' WHERE `chat_id` = $data ");
-    sendMessage($data, "کاربر گرامی درخواست برداشت شما با موفقیت توسط ادمین تایید و واریز شد.");
+    sendMessage($data, "کاربر گرامی!\n\nدرخواست برداشت شما به مقدار {$receipt['amount']} TRX توسط ادمین تایید و به حساب شما واریز گردید.");
     die();
 }
 
