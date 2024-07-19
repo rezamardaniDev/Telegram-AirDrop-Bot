@@ -33,12 +33,13 @@ if (array_key_exists('callback_query', $update)) {
 if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصلی') {
 
     setStep($from_id, 'home');
-    $user_Invite_Id = explode(" ", $text)[1];
+    $user_Invite_Id = explode(" ", $text)[1];   
 
     if ($user_Invite_Id && $user_Invite_Id != $from_id && !$user) {
         $stmt = $db->prepare("SELECT * FROM `users` WHERE `chat_id` = ?");
         $stmt->bind_param("i", $user_Invite_Id);
         $stmt->execute();
+        $stmt->close();
         $validate_Referal_Id = $stmt->get_result();
 
         if ($validate_Referal_Id) {
@@ -84,11 +85,17 @@ if ($text == '「 🔰 پروفایل کاربری 」' || $text == 'بازگش�
     $user_Wallet = $user['wallet'] ?? 'ثبت نشده';
     $user_Referal = $user['referal'];
     $user_Info_Text = "🔺 پروفایل شما\n\n💳 آدرس کیف پول:\n`$user_Wallet`\n\n💰موجودی: $user_Balance TRX\n👀 شناسه کاربری: `$from_id`\n📊 تعداد زیرمجموعه ها: $user_Referal";
-    sendMessage($from_id, $user_Info_Text, $userProfile);
-    die();
+
+    if($user_Wallet == "ثبت نشده"){
+        sendMessage($from_id, $user_Info_Text, $userProfile1);
+        die();
+    } else {
+        sendMessage($from_id, $user_Info_Text, $userProfile2);
+        die();
+    }
 }
 
-if ($text == 'تغییر کیف پول' && getStep($from_id) == 'profile') {
+if (($text == 'تغییر کیف پول' || $text == 'ثبت کیف پول') && getStep($from_id) == 'profile') {
     setStep($from_id, 'set-wallet-address');
     sendMessage($from_id, "آدرس کیف پول خود را وارد کنید: ", $backToProfile);
     die();
@@ -101,7 +108,7 @@ if ($text && getStep($from_id) == 'set-wallet-address') {
     $user_Wallet = $text;
     $user_Referal = $user['referal'];
     $user_Info_Text = "آدرس کیف پول شما با موفقیت تغییر کرد!\n\n💳 آدرس کیف پول:\n`$user_Wallet`\n\n💰موجودی: $user_Balance TRX\n👀 شناسه کاربری: `$from_id`\n📊 تعداد زیرمجموعه ها: $user_Referal";
-    sendMessage($from_id, $user_Info_Text, $userProfile);
+    sendMessage($from_id, $user_Info_Text, $userProfile2);
     die();
 }
 
