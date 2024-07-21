@@ -26,9 +26,10 @@ if (array_key_exists('callback_query', $update)) {
     $user = $db->query("SELECT * FROM `users` WHERE `chat_id` = ($from_id)")->fetch_assoc();
 }
 # ----------------- [ <- user panel -> ] ----------------- #
-// if ($chat_type != 'private') {
-//     die();
-// }
+if ($user && $user['status'] == 0) {
+    sendMessage($from_id, "کاربر گرامی متاسفانه شما از ربات بلاک شده اید!");
+    die();
+}
 
 if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصلی') {
 
@@ -193,12 +194,26 @@ if (($text == 'پنل مدیریت' || $text == 'بازگشت به مدیریت'
     die();
 }
 
-if ($text == 'آمار ربات') {
+if ($text == 'آمار ربات' && in_array($from_id, $bot_admins)) {
     $members = mysqli_query($db, "SELECT COUNT(*) AS total FROM `users`")->fetch_assoc()['total'];
     $txt = "تعداد اعضای ربات تا این لحظه: $members نفر";
     sendMessage($from_id, $txt);
     die();
 }
+
+if ($text == 'پیام همگانی' && in_array($from_id, $bot_admins)) {
+    setStep($from_id, "broadcast");
+    sendMessage($from_id, "لطفا متن پیام را وارد کنید:", $back_To_Admin);
+    die();
+}
+
+if (getStep($from_id) == 'broadcast' && in_array($from_id, $bot_admins)){
+    $db->query("INSERT INTO `messages` (`text`) VALUES ('$text') ");
+    sendMessage($from_id, "پیام شما در صف ارسال قرار گرفت!", $admin_panel);
+    setStep($from_id, 'admin-panel');
+    die();
+}
+
 
 if ($text == "تنظیمات" && in_array($from_id, $bot_admins)) {
     setStep($from_id, "settings");
@@ -214,7 +229,7 @@ if (getStep($from_id) == "settings" && in_array($from_id, $bot_admins)) {
             break;
 
         case "تنظیم متن قوانین":
-            setStep($from_id, "set-rule");
+            setStep($from_id, "set-rule]");
             sendMessage($from_id, "متن قوانین جدید را ارسال کنید:", $back_To_Admin);
             break;
 
@@ -281,7 +296,7 @@ if (getStep($from_id) == "manage-users" && in_array($from_id, $bot_admins)) {
             break;
 
         case "مسدود کردن":
-            setStep($from_id, "set-start");
+            setStep($from_id, "block-user");
             sendMessage($from_id, "شناسه کاربری که میخواهید مسدود کنید را بفرستید: ", $back_To_Admin);
             break;
     }
@@ -289,13 +304,39 @@ if (getStep($from_id) == "manage-users" && in_array($from_id, $bot_admins)) {
 }
 
 if (getStep($from_id) == "search-user") {
+    if (!preg_match("/\d+(\.\d+)?$/", $text)) {
+        sendMessage($from_id, "فرمت ارسالی صحیح نیست مجددا تلاش کنید!");
+        die();
+    }
     $result = $db->query("SELECT * FROM `users` WHERE `chat_id` = {$text} ")->fetch_assoc();
-    $status = $result['status'] == 1 ? 'آزاد': 'بلاک';
+    $status = $result['status'] == 1 ? 'آزاد' : 'بلاک';
     if ($result) {
         sendMessage($from_id, "🔰 اطلاعات کاربر جستجو شده!\n\n▫️ شناسه کاربری : {$result['chat_id']}\n▫️ موجودی : {$result['balance']}\n▫️ تعداد زیرمجموعه ها : {$result['referal']}\n▫️ وضعیت حساب: $status", $manage_user_keyboard);
     } else {
         sendMessage($from_id, "کاربری با این شناسه یافت نشد!", $manage_user_keyboard);
     }
+    setStep($from_id, "manage-users");
+    die();
+}
+
+if (getStep($from_id) == "unblock-user") {
+    if (!preg_match("/\d+(\.\d+)?$/", $text)) {
+        sendMessage($from_id, "فرمت ارسالی صحیح نیست مجددا تلاش کنید!");
+        die();
+    }
+    $db->query("UPDATE `users` SET `status` = 1 WHERE `chat_id` = {$text} ");
+    sendMessage($from_id, "کاربر با شناسه $text آزاد شد.", $manage_user_keyboard);
+    setStep($from_id, "manage-users");
+    die();
+}
+
+if (getStep($from_id) == "block-user") {
+    if (!preg_match("/\d+(\.\d+)?$/", $text)) {
+        sendMessage($from_id, "فرمت ارسالی صحیح نیست مجددا تلاش کنید!");
+        die();
+    }
+    $db->query("UPDATE `users` SET `status` = 0 WHERE `chat_id` = {$text} ");
+    sendMessage($from_id, "کاربر با شناسه $text مسدود شد.", $manage_user_keyboard);
     setStep($from_id, "manage-users");
     die();
 }
