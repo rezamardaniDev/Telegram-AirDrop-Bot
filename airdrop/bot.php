@@ -206,7 +206,7 @@ if ($text == "تنظیمات" && in_array($from_id, $bot_admins)) {
     die();
 }
 
-if (getStep($from_id) == "settings") {
+if (getStep($from_id) == "settings" && in_array($from_id, $bot_admins)) {
     switch ($text) {
         case "تنظیم هدیه زیرمجموعه گیری":
             setStep($from_id, "set-gift");
@@ -259,5 +259,43 @@ if (getStep($from_id) == "set-support") {
     $db->query("UPDATE `config` SET `config_value` = '$text' WHERE `config_key` = 'support' ");
     sendMessage($from_id, "متن پشتیبانی ربات تغییر کرد!", $settings_keyboard);
     setStep($from_id, "settings");
+    die();
+}
+
+if ($text == 'مدیریت کاربران' && in_array($from_id, $bot_admins)) {
+    setStep($from_id, "manage-users");
+    sendMessage($from_id, "لطفا یکی از گزینه های زیر را انتخاب کنید: ", $manage_user_keyboard);
+    die();
+}
+
+if (getStep($from_id) == "manage-users" && in_array($from_id, $bot_admins)) {
+    switch ($text) {
+        case "جستجوی کاربر":
+            setStep($from_id, "search-user");
+            sendMessage($from_id, "شناسه کاربری که میخواهید جستجو کنید را بفرستید: ", $back_To_Admin);
+            break;
+
+        case "آزاد کردن":
+            setStep($from_id, "unblock-user");
+            sendMessage($from_id, "شناسه کاربری که میخواهید آزاد کنید را بفرستید: ", $back_To_Admin);
+            break;
+
+        case "مسدود کردن":
+            setStep($from_id, "set-start");
+            sendMessage($from_id, "شناسه کاربری که میخواهید مسدود کنید را بفرستید: ", $back_To_Admin);
+            break;
+    }
+    die();
+}
+
+if (getStep($from_id) == "search-user") {
+    $result = $db->query("SELECT * FROM `users` WHERE `chat_id` = {$text} ")->fetch_assoc();
+    $status = $result['status'] == 1 ? 'آزاد': 'بلاک';
+    if ($result) {
+        sendMessage($from_id, "🔰 اطلاعات کاربر جستجو شده!\n\n▫️ شناسه کاربری : {$result['chat_id']}\n▫️ موجودی : {$result['balance']}\n▫️ تعداد زیرمجموعه ها : {$result['referal']}\n▫️ وضعیت حساب: $status", $manage_user_keyboard);
+    } else {
+        sendMessage($from_id, "کاربری با این شناسه یافت نشد!", $manage_user_keyboard);
+    }
+    setStep($from_id, "manage-users");
     die();
 }

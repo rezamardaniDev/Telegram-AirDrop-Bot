@@ -74,6 +74,15 @@ $settings_keyboard = json_encode([
     ]
 ]);
 
+$manage_user_keyboard = json_encode([
+    'resize_keyboard' => true,
+    'keyboard' => [
+        [['text' => 'جستجوی کاربر']],
+        [['text' => 'مسدود کردن'], ['text' => 'آزاد کردن']],
+        [['text' => 'بازگشت به مدیریت']]
+    ]
+]);
+
 $back_To_Admin = json_encode([
     'resize_keyboard' => true,
     'keyboard' => [
