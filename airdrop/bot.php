@@ -41,7 +41,7 @@ if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصل
     $stmt->execute([$refferal_Id]);
     $validate_Refferal = $stmt->fetch();
 
-    if ($validate_Refferal && $from_id != $refferal_Id) {
+    if ($validate_Refferal && $from_id != $refferal_Id && !$user) {
         sendMessage($refferal_Id, "یک نفر با لینک شما به ربات پیوست!");
         $stmt = $db->query("SELECT `config_value` FROM `config` WHERE `config_key` = 'gift' ");
         $gift = $stmt->fetch()['config_value'];
@@ -51,12 +51,16 @@ if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصل
     if (!$user) {
         $db->exec("INSERT INTO `users` (`chat_id`) VALUES ($from_id)");
     }
-    setStep($from_id, 'Home');
+
+    $stmt = $db->query("SELECT `config_value` FROM `config` WHERE `config_key` = 'start' ");
+    $start = $stmt->fetch()['config_value'];
+
     if (in_array($from_id, $bot_admins)) {
-        sendMessage($from_id, "سلام به ربات ایردراپ خوش آمدید!", $userKeyboard2);
+        sendMessage($from_id, $start, $userKeyboard2);
     } else {
-        sendMessage($from_id, "سلام به ربات ایردراپ خوش آمدید!", $userKeyboard1);
+        sendMessage($from_id, $start, $userKeyboard1);
     }
+    setStep($from_id, 'Home');
     die();
 }
 
@@ -79,111 +83,122 @@ if ($text == '「 👥 برترین کاربران 」') {
     die();
 }
 
-// if ($text == '「 🔰 پروفایل کاربری 」' || $text == 'بازگشت به پروفایل' || $text == '/profile') {
-//     setStep($from_id, 'profile');
-//     $user_Balance = $user['balance'];
-//     $user_Wallet = $user['wallet'] ?? 'ثبت نشده';
-//     $user_Referal = $user['referal'];
-//     $user_Info_Text = "🔺 پروفایل شما\n\n💳 آدرس کیف پول:\n`$user_Wallet`\n\n💰موجودی: $user_Balance TRX\n👀 شناسه کاربری: `$from_id`\n📊 تعداد زیرمجموعه ها: $user_Referal";
+if ($text == '「 🔰 پروفایل کاربری 」' || $text == 'بازگشت به پروفایل' || $text == '/profile') {
+    setStep($from_id, 'profile');
+    $user_Balance = $user['balance'];
+    $user_Wallet = $user['wallet'] ?? 'ثبت نشده';
+    $user_Referal = $user['referal'];
+    $user_Info_Text = "🔺 پروفایل شما\n\n💳 آدرس کیف پول:\n`$user_Wallet`\n\n💰موجودی: $user_Balance TRX\n👀 شناسه کاربری: `$from_id`\n📊 تعداد زیرمجموعه ها: $user_Referal";
 
-//     if ($user_Wallet == "ثبت نشده") {
-//         sendMessage($from_id, $user_Info_Text, $userProfile1);
-//         die();
-//     } else {
-//         sendMessage($from_id, $user_Info_Text, $userProfile2);
-//         die();
-//     }
-// }
+    if ($user_Wallet == "ثبت نشده") {
+        sendMessage($from_id, $user_Info_Text, $userProfile1);
+        die();
+    } else {
+        sendMessage($from_id, $user_Info_Text, $userProfile2);
+        die();
+    }
+}
 
-// if (($text == 'تغییر کیف پول' || $text == 'ثبت کیف پول') && getStep($from_id) == 'profile') {
-//     setStep($from_id, 'set-wallet-address');
-//     sendMessage($from_id, "آدرس کیف پول خود را وارد کنید: ", $backToProfile);
-//     die();
-// }
+if (($text == 'تغییر کیف پول' || $text == 'ثبت کیف پول') && $user['step'] == 'profile') {
+    setStep($from_id, 'set-wallet-address');
+    sendMessage($from_id, "آدرس کیف پول خود را وارد کنید: ", $backToProfile);
+    die();
+}
 
-// if ($text && getStep($from_id) == 'set-wallet-address') {
-//     setStep($from_id, 'profile');
-//     $db->query("UPDATE `users` SET `wallet` = '$text' WHERE `chat_id` = ($from_id)");
-//     $user_Balance = $user['balance'];
-//     $user_Wallet = $text;
-//     $user_Referal = $user['referal'];
-//     $user_Info_Text = "آدرس کیف پول شما با موفقیت تغییر کرد!\n\n💳 آدرس کیف پول:\n`$user_Wallet`\n\n💰موجودی: $user_Balance TRX\n👀 شناسه کاربری: `$from_id`\n📊 تعداد زیرمجموعه ها: $user_Referal";
-//     sendMessage($from_id, $user_Info_Text, $userProfile2);
-//     die();
-// }
+if ($text && $user['step'] == 'set-wallet-address') {
 
-// if ($text == 'برداشت موجودی') {
+    setStep($from_id, 'profile');
 
-//     if (!$user['wallet']) {
-//         sendMessage($from_id, "ابتدا باید آدرس کیف پول خود را ثبت کنید!");
-//         die();
-//     }
+    $stmt = $db->prepare("UPDATE `users` SET `wallet` = (?) WHERE `chat_id` = ($from_id)");
+    $stmt->execute([$text]);
 
-//     $user_Balance = $user['balance'];
-//     if ($user_Balance >= 5) {
-//         setStep($from_id, 'withdraw');
-//         $user_Balance = $user['balance'];
-//         $user_Wallet = $user['wallet'];
-//         $withdraw_Text = "♻️ اطلاعات تراکنش!\n\n💎 برداشت : $user_Balance TRX\n💳 به آدرس :\n`$user_Wallet`\n\n❗️در صورتی که اطلاعات بالا مورد تایید است لطفا روی دکمه زیر کلیک کنید";
-//         sendMessage($from_id, $withdraw_Text, $withdraw);
-//     } else {
-//         sendMessage($from_id, "موجودی شما برای برداشت کافی نیست! حداقل مقدار قابل برداشت 5 ترون میباشد.", $backToProfile);
-//     }
-//     die();
-// }
+    $user_Balance = $user['balance'];
+    $user_Wallet = $text;
+    $user_Referal = $user['referal'];
 
-// if ($data == 'withdraw' && getStep($from_id) == 'withdraw') {
-//     $check_Withdraw_Request = $db->query("SELECT * FROM `withdraw_request` WHERE `chat_id` = ($from_id) AND `status` = 'registered' ");
-//     if ($check_Withdraw_Request->num_rows == 0) {
+    $user_Info_Text = "آدرس کیف پول شما با موفقیت تغییر کرد!\n\n💳 آدرس کیف پول:\n`$user_Wallet`\n\n💰موجودی: $user_Balance TRX\n👀 شناسه کاربری: `$from_id`\n📊 تعداد زیرمجموعه ها: $user_Referal";
+    sendMessage($from_id, $user_Info_Text, $userProfile2);
+    die();
+}
 
-//         $user_Balance = $user['balance'];
-//         $user_Wallet = $user['wallet'];
-//         $withdraw_Time = date("Y/m/d H:i:s");
+if ($text == 'برداشت موجودی') {
 
-//         $db->query("INSERT INTO `withdraw_request` (`chat_id`, `wallet`, `amount`) VALUES ($from_id, '$user_Wallet', $user_Balance)");
-//         $db->query("UPDATE `users` SET `balance` = 0 WHERE `chat_id` = ($from_id) ");
-//         $seccess_Receipt = $db->query("SELECT * FROM `withdraw_request` WHERE `chat_id` = ($from_id) AND `status` = 'registered' ")->fetch_array();
-//         $admin_Receipt_Text = "🟡 درخواست برداشت جدید\n\n▫️ شناسه کاربر : $from_id\n▫️ مقدار برداشت : {$seccess_Receipt['amount']} TRX\n▫️ آدرس کیف پول :\n\n`{$seccess_Receipt['wallet']}`\n\nتاریخ درخواست :\n$withdraw_Time";
-//         sendMessage(-1002180465057, $admin_Receipt_Text, json_encode([
-//             'inline_keyboard' => [
-//                 [['text' => 'تایید واریز', 'callback_data' => $from_id]]
-//             ]
-//         ]));
+    if (!$user['wallet']) {
+        sendMessage($from_id, "ابتدا باید آدرس کیف پول خود را ثبت کنید!");
+        die();
+    }
 
-//         $Receipt_Text = "✅ درخواست برداشت شما در صف انتظار قرار گرفت!\n\n🔰 مقدار برداشت : {$seccess_Receipt['amount']} TRX\n💳 آدرس کیف پول :\n`{$seccess_Receipt['wallet']}`\n\n⏰ زمان ثبت درخواست :\n$withdraw_Time";
-//         editMessage($chat_id, $Receipt_Text, $message_id);
-//         setStep($from_id, 'profile');
-//     } else {
-//         editMessage($chat_id, "شما از قبل یک درخواست پردازش نشده دارید!\nبرای درخواست جدید باید تا تایید درخواست قبلی خود صبر کنید.", $message_id);
-//     }
-//     die();
-// }
+    if ($user['balance'] >= 5) {
+        setStep($from_id, 'withdraw');
+        $user_Balance = $user['balance'];
+        $user_Wallet = $user['wallet'];
+        $withdraw_Text = "♻️ اطلاعات تراکنش!\n\n💎 برداشت : $user_Balance TRX\n💳 به آدرس :\n`$user_Wallet`\n\n❗️در صورتی که اطلاعات بالا مورد تایید است لطفا روی دکمه زیر کلیک کنید";
+        sendMessage($from_id, $withdraw_Text, $withdraw);
+    } else {
+        sendMessage($from_id, "موجودی شما برای برداشت کافی نیست! حداقل مقدار قابل برداشت 5 ترون میباشد.", $backToProfile);
+    }
+    die();
+}
 
-// if ($data) {
-//     $receipt = $db->query("SELECT * FROM `withdraw_request` WHERE `chat_id` = $data AND `status` = 'registered' ")->fetch_array();
-//     $withdraw_Time = date("Y/m/d H:i:s");
-//     $Receipt_Text = "🟢 واریز انجام شد\n\n▫️ شناسه کاربر : {$receipt['chat_id']}\n▫️ مقدار برداشت : {$receipt['amount']} TRX\n▫️ آدرس کیف پول :\n\n`{$receipt['wallet']}`\n\nتاریخ درخواست :\n{$receipt['created_at']}\nتاریخ واریز :\n$withdraw_Time";
-//     editMessage(-1002180465057, $Receipt_Text, $message_id, json_encode([
-//         'inline_keyboard' => [
-//             [['text' => 'واریز شد', 'callback_data' => 'done']]
-//         ]
-//     ]));
-//     $db->query("UPDATE `withdraw_request` SET `status` = 'done' WHERE `chat_id` = $data ");
-//     sendMessage($data, "کاربر گرامی!\n\nدرخواست برداشت شما به مقدار {$receipt['amount']} TRX توسط ادمین تایید و به حساب شما واریز گردید.");
-//     die();
-// }
+if ($data == 'withdraw' && $user['step'] == 'withdraw') {
 
-// if ($text == '「 🛑 قوانین 」') {
-//     $rule_Text = $db->query("SELECT `config_value` FROM `config` WHERE `config_key` = 'rule' ")->fetch_array()['config_value'] ?? 'ثبت نشده';
-//     sendMessage($from_id, $rule_Text, $backToMenu);
-//     die();
-// }
+    $check_Withdraw_Request = $db->query("SELECT * FROM `withdraw_request` WHERE `chat_id` = ($from_id) AND `status` = 'registered' ");
+    if ($check_Withdraw_Request->rowCount() == 0) {
 
-// if ($text == '「 ☎️ پشتیبانی 」') {
-//     $support_Text = $db->query("SELECT `config_value` FROM `config` WHERE `config_key` = 'support' ")->fetch_array()['config_value'] ?? 'ثبت نشده';
-//     sendMessage($from_id, $support_Text, $backToMenu);
-//     die();
-// }
+        $user_Balance = $user['balance'];
+        $user_Wallet = $user['wallet'];
+        $withdraw_Time = date("Y/m/d H:i:s");
+
+        $db->exec("INSERT INTO `withdraw_request` (`chat_id`, `wallet`, `amount`) VALUES ($from_id, '$user_Wallet', $user_Balance)");
+        $db->exec("UPDATE `users` SET `balance` = 0 WHERE `chat_id` = ($from_id) ");
+        $stmt = $db->query("SELECT * FROM `withdraw_request` WHERE `chat_id` = ($from_id) AND `status` = 'registered' ");
+        $seccess_Receipt = $stmt->fetch();
+        $admin_Receipt_Text = "🟡 درخواست برداشت جدید\n\n▫️ شناسه کاربر : $from_id\n▫️ مقدار برداشت : {$seccess_Receipt['amount']} TRX\n▫️ آدرس کیف پول :\n\n`{$seccess_Receipt['wallet']}`\n\nتاریخ درخواست :\n$withdraw_Time";
+        sendMessage(-1002180465057, $admin_Receipt_Text, json_encode([
+            'inline_keyboard' => [
+                [['text' => 'تایید واریز', 'callback_data' => $from_id]]
+            ]
+        ]));
+
+        $Receipt_Text = "✅ درخواست برداشت شما در صف انتظار قرار گرفت!\n\n🔰 مقدار برداشت : {$seccess_Receipt['amount']} TRX\n💳 آدرس کیف پول :\n`{$seccess_Receipt['wallet']}`\n\n⏰ زمان ثبت درخواست :\n$withdraw_Time";
+        editMessage($chat_id, $Receipt_Text, $message_id);
+        setStep($from_id, 'profile');
+    } else {
+        editMessage($chat_id, "شما از قبل یک درخواست پردازش نشده دارید!\nبرای درخواست جدید باید تا تایید درخواست قبلی خود صبر کنید.", $message_id);
+    }
+    die();
+}
+
+if ($data) {
+
+    $stmt = $db->query("SELECT * FROM `withdraw_request` WHERE `chat_id` = $data AND `status` = 'registered' ");
+    $receipt = $stmt->fetch();
+
+    $withdraw_Time = date("Y/m/d H:i:s");
+    $Receipt_Text = "🟢 واریز انجام شد\n\n▫️ شناسه کاربر : {$receipt['chat_id']}\n▫️ مقدار برداشت : {$receipt['amount']} TRX\n▫️ آدرس کیف پول :\n\n`{$receipt['wallet']}`\n\nتاریخ درخواست :\n{$receipt['created_at']}\nتاریخ واریز :\n$withdraw_Time";
+    editMessage(-1002180465057, $Receipt_Text, $message_id, json_encode([
+        'inline_keyboard' => [
+            [['text' => 'واریز شد', 'callback_data' => 'done']]
+        ]
+    ]));
+    $db->exec("UPDATE `withdraw_request` SET `status` = 'done' WHERE `chat_id` = $data ");
+    sendMessage($data, "کاربر گرامی!\n\nدرخواست برداشت شما به مقدار {$receipt['amount']} TRX توسط ادمین تایید و به حساب شما واریز گردید.");
+    die();
+}
+
+if ($text == '「 🛑 قوانین 」') {
+    $stmt = $db->query("SELECT `config_value` FROM `config` WHERE `config_key` = 'start' ");
+    $rule_Text = $stmt->fetch()['config_value'];
+    sendMessage($from_id, $rule_Text, $backToMenu);
+    die();
+}
+
+if ($text == '「 ☎️ پشتیبانی 」') {
+    $stmt = $db->query("SELECT `config_value` FROM `config` WHERE `config_key` = 'start' ");
+    $support_Text = $stmt->fetch()['config_value'];
+    sendMessage($from_id, $support_Text, $backToMenu);
+    die();
+}
 
 // # ----------------- [ <- admin panel -> ] ----------------- #
 // if (($text == 'پنل مدیریت' || $text == 'بازگشت به مدیریت') && in_array($from_id, $bot_admins)) {
