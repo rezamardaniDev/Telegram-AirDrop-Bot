@@ -1,5 +1,7 @@
 <?php
 
+include 'connection.php';
+
 function TelegramAPI(string $method, array $params)
 {
     $ch = curl_init();
@@ -53,28 +55,10 @@ function sendPhoto($chat_id, $photo, $caption)
     ]);
 }
 
-function convertToEnglishNumbers(string $text)
-{
-    $persian = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-    $arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-    $english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-
-    $PeToEn = str_replace($persian, $english, $text);
-    $ArToEn = str_replace($arabic, $english, $PeToEn);
-
-    return $ArToEn;
-}
 function setStep($chat_id, $step)
 {
     global $db;
-    mysqli_query($db, "UPDATE `users` SET `step` = '$step' WHERE `chat_id` = $chat_id");
-}
-
-function getStep($chat_id)
-{
-    global $db;
-    $result = mysqli_query($db, "SELECT * FROM `users` WHERE `chat_id` = $chat_id")->fetch_assoc()['step'];
-    return $result;
+    $db->exec("UPDATE `users` SET `step` = '$step' WHERE `chat_id` = $chat_id");
 }
 
 function debug($data)
