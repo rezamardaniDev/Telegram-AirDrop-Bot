@@ -39,7 +39,6 @@ $lock_channel
     die();
 };
 
-
 if ($user && $user['status'] == 0) {
     sendMessage($from_id, "کاربر گرامی متاسفانه شما از ربات بلاک شده اید!");
     die();
@@ -341,7 +340,7 @@ if ($user['step'] == "search-user") {
 
     $status = $result['status'] == 1 ? 'آزاد' : 'بلاک';
     if ($result) {
-        sendMessage($from_id, "🔰 اطلاعات کاربر جستجو شده!\n\n▫️ شناسه کاربری : {$result['chat_id']}\n▫️ موجودی : {$result['balance']}\n▫️ تعداد زیرمجموعه ها : {$result['referal']}\n▫️ وضعیت حساب: $status", $manage_user_keyboard);
+        sendMessage($from_id, "🔰 اطلاعات کاربر جستجو شده!\n\n▫️ شناسه کاربری : {$result['chat_id']}\n▫️ موجودی : {$result['balance']} TRX\n▫️ تعداد زیرمجموعه ها : {$result['referal']}\n▫️ وضعیت حساب: $status", $manage_user_keyboard);
     } else {
         sendMessage($from_id, "کاربری با این شناسه یافت نشد!", $manage_user_keyboard);
     }

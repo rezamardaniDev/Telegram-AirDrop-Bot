@@ -18,5 +18,5 @@ if ($message) {
     }
 
     $db->exec("UPDATE `messages` SET `status` = 'done' WHERE `id` = {$message['id']}");
-    sendMessage($sender, "همگانی ارسال شد!");
+    sendMessage($sender, "پیام شما به تمام اعضای ربات ارسال شد.");
 }

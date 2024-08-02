@@ -1,9 +1,9 @@
 <?php
 
-$hostName = 'localhost';
-$userName = 'faraitir_reza';
-$password = 'mardani80';
-$dbName = 'faraitir_airdrop';
+$hostName = 'localhost'; # تغییر ندید
+$userName = 'faraitir_reza'; # یوزرنیم دیتابیس
+$password = 'mardani80'; # پسورد دیتابیس
+$dbName = 'faraitir_airdrop'; # نام دیتابیس
 
 try {
 

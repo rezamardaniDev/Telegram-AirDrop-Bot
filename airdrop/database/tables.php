@@ -1,6 +1,6 @@
 <?php
 
-require '../database/connection.php';
+require 'connection.php';
 
 try {
 
