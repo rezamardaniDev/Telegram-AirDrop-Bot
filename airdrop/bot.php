@@ -2,10 +2,10 @@
 
 error_reporting(E_ERROR | E_WARNING | E_PARSE);
 
-require 'config.php';
-require 'functions.php';
-require 'keyboards.php';
-require 'connection.php';
+require 'config/config.php';
+require 'utils/functions.php';
+require 'utils/keyboards.php';
+require 'database/connection.php';
 
 $update = json_decode(file_get_contents('php://input'), true);
 # ----------------- [ <- variables -> ] ----------------- #

@@ -1,6 +1,6 @@
 <?php
 
-include 'connection.php';
+include '../database/connection.php';
 
 function TelegramAPI(string $method, array $params)
 {
