@@ -35,17 +35,18 @@ if ($user && $user['status'] == 0) {
 }
 
 if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصلی') {
-    $refferal_Id = explode(" ", $text)[1];
+    $referal_Id = explode(" ", $text)[1];
 
-    $stmt = $db->prepare("SELECT * FROM `users` WHERE `chat_id` = (?)");
-    $stmt->execute([$refferal_Id]);
-    $validate_Refferal = $stmt->fetch();
+    $stmt = $db->prepare("SELECT * FROM `users` WHERE `chat_id` = ?");
+    $stmt->execute([$referal_Id]);
+    $validate_Referal = $stmt->fetch();
 
-    if ($validate_Refferal && $from_id != $refferal_Id && !$user) {
-        sendMessage($refferal_Id, "یک نفر با لینک شما به ربات پیوست!");
+    if ($validate_Referal && $from_id != $referal_Id && !$user) {
+        sendMessage($referal_Id, "یک نفر با لینک شما به ربات پیوست!");
+        $db->exec("INSERT INTO `invitations` (`caller`, `invited`) VALUES ($referal_Id, $from_id)");
         $stmt = $db->query("SELECT `config_value` FROM `config` WHERE `config_key` = 'gift' ");
         $gift = $stmt->fetch()['config_value'];
-        $db->exec("UPDATE `users` SET `balance` = `balance` + $gift WHERE `chat_id` = ($refferal_Id)");
+        $db->exec("UPDATE `users` SET `balance` = `balance` + $gift WHERE `chat_id` = ($referal_Id)");
     }
 
     if (!$user) {
