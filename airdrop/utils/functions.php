@@ -14,7 +14,7 @@ function TelegramAPI(string $method, array $params)
     ]);
     $data = curl_exec($ch);
     curl_close($ch);
-    return $data;
+    return json_decode($data);
 }
 
 function sendMessage($chat_id, $text, $reply_markup = null)
@@ -53,6 +53,15 @@ function sendPhoto($chat_id, $photo, $caption)
         'photo'       => $photo,
         'caption'     => $caption
     ]);
+}
+
+function checkJoin($chat_id){
+    global $lock_channel;
+    $res = TelegramAPI('getChatMember', [
+        'chat_id' => $lock_channel,
+        'user_id' => $chat_id
+    ]);
+    return $res->result->status;
 }
 
 function setStep($chat_id, $step)

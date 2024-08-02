@@ -29,6 +29,17 @@ if (array_key_exists('callback_query', $update)) {
     $user = $stmt->fetch();
 }
 # ----------------- [ <- user panel -> ] ----------------- #
+if (checkJoin($from_id) == 'left') {
+    $txt = "
+کاربر گرامی جهت استفاده از ربات ابتدا در کانال اطلاع رسانی عضو شوید!
+
+$lock_channel
+    ";
+    sendMessage($from_id, $txt);
+    die();
+};
+
+
 if ($user && $user['status'] == 0) {
     sendMessage($from_id, "کاربر گرامی متاسفانه شما از ربات بلاک شده اید!");
     die();
