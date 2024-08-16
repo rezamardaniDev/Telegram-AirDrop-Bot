@@ -55,13 +55,13 @@ function sendPhoto($chat_id, $photo, $caption)
     ]);
 }
 
-function checkJoin($chat_id){
-    global $lock_channel;
-    $res = TelegramAPI('getChatMember', [
-        'chat_id' => $lock_channel,
-        'user_id' => $chat_id
+function getChatMember($chat_id){
+    
+    $data = TelegramAPI('getChatMember', [
+        'chat_id' => $chat_id,
+        'user_id' => $GLOBALS['from_id']
     ]);
-    return $res->result->status;
+    return $data->result->status;
 }
 
 function setStep($chat_id, $step)

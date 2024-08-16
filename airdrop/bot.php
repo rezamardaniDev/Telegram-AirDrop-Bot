@@ -9,17 +9,11 @@ require 'database/connection.php';
 
 $update = json_decode(file_get_contents('php://input'), true);
 # ----------------- [ <- variables -> ] ----------------- #
-include 'utils/variables.php';
+require 'utils/variables.php';
 # ----------------- [ <- user panel -> ] ----------------- #
-if (checkJoin($from_id) == 'left') {
-    $txt = "
-کاربر گرامی جهت استفاده از ربات ابتدا در کانال اطلاع رسانی عضو شوید!
-
-$lock_channel
-    ";
-    sendMessage($from_id, $txt);
-    die();
-};
+if ($update) {
+    require 'utils/checkJoin.php';
+}
 
 if ($user && $user['status'] == 0) {
     sendMessage($from_id, "کاربر گرامی متاسفانه شما از ربات بلاک شده اید!");
@@ -29,16 +23,18 @@ if ($user && $user['status'] == 0) {
 if (preg_match('/^\/start/', $text) || $text == 'بازگشت به منو اصلی') {
     $referal_Id = explode(" ", $text)[1];
 
-    $stmt = $db->prepare("SELECT * FROM `users` WHERE `chat_id` = ?");
-    $stmt->execute([$referal_Id]);
-    $validate_Referal = $stmt->fetch();
+    if ($referal_Id) {
+        $stmt = $db->prepare("SELECT * FROM `users` WHERE `chat_id` = ?");
+        $stmt->execute([$referal_Id]);
+        $validate_Referal = $stmt->fetch();
 
-    if ($validate_Referal && $from_id != $referal_Id && !$user) {
-        sendMessage($referal_Id, "یک نفر با لینک شما به ربات پیوست!");
-        $db->exec("INSERT INTO `invitations` (`caller`, `invited`) VALUES ($referal_Id, $from_id)");
-        $stmt = $db->query("SELECT `config_value` FROM `config` WHERE `config_key` = 'gift' ");
-        $gift = $stmt->fetch()['config_value'];
-        $db->exec("UPDATE `users` SET `balance` = `balance` + $gift WHERE `chat_id` = ($referal_Id)");
+        if ($validate_Referal && $from_id != $referal_Id && !$user) {
+            sendMessage($referal_Id, "یک نفر با لینک شما به ربات پیوست!");
+            $db->exec("INSERT INTO `invitations` (`caller`, `invited`) VALUES ($referal_Id, $from_id)");
+            $stmt = $db->query("SELECT `config_value` FROM `config` WHERE `config_key` = 'gift' ");
+            $gift = $stmt->fetch()['config_value'];
+            $db->exec("UPDATE `users` SET `balance` = `balance` + $gift WHERE `chat_id` = ($referal_Id)");
+        }
     }
 
     if (!$user) {
