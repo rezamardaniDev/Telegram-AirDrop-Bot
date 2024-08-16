@@ -24,6 +24,7 @@ if (array_key_exists('callback_query', $update)) {
     $message_id = $update['callback_query']['message']['message_id'];
     $chat_id = $update['callback_query']['message']['chat']['id'];
     $from_id = $update['callback_query']['from']['id'];
+
     $chat_type = $update['callback_query']['message']['chat']['type'];
     $stmt = $db->query("SELECT * FROM `users` WHERE `chat_id` = ($from_id)");
     $user = $stmt->fetch();
@@ -267,6 +268,37 @@ if ($user['step'] == "settings" && in_array($from_id, $bot_admins)) {
             setStep($from_id, "set-support");
             sendMessage($from_id, "متن پشتیبانی جدید را ارسال کنید:", $back_To_Admin);
             break;
+
+        case "تنظیم کانال جوین اجباری":
+            setStep($from_id, "set-channel");
+            $txt = "
+لطفا مشخصات کانال جدید را به فرمت زیر ارسال کنید:
+- خط اول شناسه عددی کانال
+- خط دوم نام کانال
+- خط سوم لینک عمومی یا خصوصی کانال
+            ";
+            sendMessage($from_id, $txt, $back_To_Admin);
+            break;
+
+        case "حذف کانال جوین اجباری":
+            setStep($from_id, "del-channel");
+            sendMessage($from_id, "شناسه کانالی که میخواهید حذف شود را ارسال کنید: ", $back_To_Admin);
+            break;
+
+        case "لیست کانال های جوین اجباری":
+            $stmt = $db->query("SELECT * FROM `channels`");
+            $channels = $stmt->fetchAll();
+            if ($channels) {
+                $txt = "📣 لیست کانال های ثبت شده : \n\n";
+                foreach ($channels as $channel) {
+                    $txt .= "{$channel['channel_name']}\n🔘 `{$channel['channel_id']}`\n-------------------\n";
+                }
+                sendMessage($from_id, $txt);
+            } else {
+                sendMessage($from_id, 'هیچ کانالی برای جوین اجباری ثبت نشده!');
+            }
+
+            break;
     }
     die();
 }
@@ -299,6 +331,39 @@ if ($user['step'] == "set-start") {
 if ($user['step'] == "set-support") {
     $db->exec("UPDATE `config` SET `config_value` = '$text' WHERE `config_key` = 'support' ");
     sendMessage($from_id, "متن پشتیبانی ربات تغییر کرد!", $settings_keyboard);
+    setStep($from_id, "settings");
+    die();
+}
+
+if ($user['step'] == "set-channel") {
+
+    $channel = explode("\n", $text);
+
+    if (count($channel) < 3) {
+        sendMessage($from_id, "فرمت ارسالی صحیح نیست ! لطفا مجددا تلاش کنید");
+        die();
+    }
+
+    $stmt = $db->query("SELECT * FROM `channels` WHERE `channel_id` = {$channel[0]}");
+    $checkChannel = $stmt->fetch();
+
+    if ($checkChannel) {
+        sendMessage($from_id, "این کانال از قبل ثبت شده؟! لطفا کانال جدیدی را اضافه کنید: ");
+        die();
+    }
+
+    $stmt = $db->prepare("INSERT INTO `channels` (`channel_id`, `channel_name`, `channel_link`) VALUES (?, ?, ?)");
+    $stmt->execute([$channel[0], $channel[1], $channel[2]]);
+
+    sendMessage($from_id, "کانال جدید با موفقیت افزوده شد!", $settings_keyboard);
+    setStep($from_id, "settings");
+    die();
+}
+
+if ($user['step'] == "del-channel") {
+    $stmt = $db->prepare("DELETE FROM `channels` WHERE `channel_id` = ? ");
+    $stmt->execute([$text]);
+    sendMessage($from_id, "کانال با موفقیت از لیست حذف شد!", $settings_keyboard);
     setStep($from_id, "settings");
     die();
 }

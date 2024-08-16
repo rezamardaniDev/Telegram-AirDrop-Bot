@@ -1,0 +1,3 @@
+<?php
+
+const TOKEN = '7437984438:AAGRTBkC_jB9_uNCM5wmNEeXW5DCXYIlJ3k';
