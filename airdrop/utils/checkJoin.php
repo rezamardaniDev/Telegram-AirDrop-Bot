@@ -9,7 +9,7 @@ $channel_key = [
 ];
 
 foreach ($channels as $channel) {
-    $checked = getChatMember($channel['channel_id']);
+    $checked = getChatMember($channel['channel_id'], $from_id);
 
     if ($checked == 'left') {
         $user_join = false;

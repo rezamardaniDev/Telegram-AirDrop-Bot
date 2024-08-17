@@ -329,11 +329,18 @@ if ($user['step'] == "set-channel") {
         die();
     }
 
-    $stmt = $db->prepare("INSERT INTO `channels` (`channel_id`, `channel_name`, `channel_link`) VALUES (?, ?, ?)");
-    $stmt->execute([$channel[0], $channel[1], $channel[2]]);
-
-    sendMessage($from_id, "کانال جدید با موفقیت افزوده شد!", $settings_keyboard);
-    setStep($from_id, "settings");
+    $checkAdmin = getChatMember($channel[0], 6331777475);
+    switch ($checkAdmin->result->status) {
+        case 'administrator':
+            $stmt = $db->prepare("INSERT INTO `channels` (`channel_id`, `channel_name`, `channel_link`) VALUES (?, ?, ?)");
+            $stmt->execute([$channel[0], $channel[1], $channel[2]]);
+            sendMessage($from_id, "کانال با موفقیت افزوده شد ツ", $settings_keyboard);
+            setStep($from_id, "settings");
+            break;
+        default:
+            sendMessage($from_id, "ربات در این کانال ادمین نیست! لطفا ابتدا ربات را ادمین کنید و مجددا اطلاعات را ارسال کنید");
+            break;
+    }
     die();
 }
 

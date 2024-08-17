@@ -55,11 +55,11 @@ function sendPhoto($chat_id, $photo, $caption)
     ]);
 }
 
-function getChatMember($chat_id){
+function getChatMember($chat_id, $user_id){
     
     $data = TelegramAPI('getChatMember', [
         'chat_id' => $chat_id,
-        'user_id' => $GLOBALS['from_id']
+        'user_id' => $user_id
     ]);
     return $data->result->status;
 }
